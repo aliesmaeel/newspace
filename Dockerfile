@@ -3,7 +3,7 @@
 # ============================================================
 FROM php:8.3-fpm AS builder
 
-# System packages required to compile intl and zip extensions
+# System packages required to compile intl and zip extensions, plus Node.js for Vite
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libicu-dev \
         libzip-dev \
@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         unzip \
         git \
         curl \
+        nodejs \
+        npm \
     && docker-php-ext-configure intl \
     && docker-php-ext-install -j"$(nproc)" \
         intl \
@@ -28,6 +30,7 @@ WORKDIR /var/www/html
 
 # Copy dependency manifests first for better layer caching
 COPY composer.json composer.lock ./
+COPY package.json package-lock.json ./
 
 # Install PHP dependencies (no dev, no scripts — app code not present yet)
 RUN composer install \
@@ -37,8 +40,14 @@ RUN composer install \
         --prefer-dist \
         --optimize-autoloader
 
+# Install JS dependencies (package manifests already copied above for cache efficiency)
+RUN npm ci
+
 # Copy the rest of the application
 COPY . .
+
+# Compile frontend assets with Vite (produces public/build/manifest.json)
+RUN npm run build
 
 # Run post-install scripts now that the full app is present
 RUN composer run-script post-autoload-dump --no-interaction || true
