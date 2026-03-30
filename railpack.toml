@@ -3,3 +3,4 @@ providers = ["php"]
 
 [build.config]
 phpVersion = "8.3"
+phpExtensions = ["intl", "zip"]
