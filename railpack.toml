@@ -1,0 +1,5 @@
+[build]
+providers = ["php"]
+
+[build.config]
+phpVersion = "8.3"
