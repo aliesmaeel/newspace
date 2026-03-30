@@ -125,6 +125,7 @@ EXPOSE 80
 
 # Bootstrap the app then hand off to supervisor
 CMD ["/bin/sh", "-c", "\
+    php artisan key:generate --force && \
     php artisan config:cache && \
     php artisan route:cache && \
     php artisan view:cache && \
