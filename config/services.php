@@ -1,0 +1,49 @@
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Third Party Services
+    |--------------------------------------------------------------------------
+    |
+    | This file is for storing the credentials for third party services such
+    | as Mailgun, Postmark, AWS and more. This file provides the de facto
+    | location for this type of information, allowing packages to have
+    | a conventional file to locate the various service credentials.
+    |
+    */
+
+    'postmark' => [
+        'key' => env('POSTMARK_API_KEY'),
+    ],
+
+    'resend' => [
+        'key' => env('RESEND_API_KEY'),
+    ],
+
+    'ses' => [
+        'key' => env('AWS_ACCESS_KEY_ID'),
+        'secret' => env('AWS_SECRET_ACCESS_KEY'),
+        'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+    ],
+
+    'slack' => [
+        'notifications' => [
+            'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
+            'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
+        ],
+    ],
+
+    'zoho' => [
+        'account_hosted' => env('ZOHO_ACCOUNT_HOSTED', 'zoho.eu'),
+        'accounts_base' => env('ZOHO_ACCOUNTS_BASE', 'https://accounts.zoho.eu'),
+        'mail_api_base' => env('ZOHO_MAIL_API_BASE', 'https://mail.zoho.eu'),
+        'mail_account_id' => env('ZOHO_MAIL_ACCOUNT_ID'),
+        'client_id' => env('ZOHO_CLIENT_ID'),
+        'client_secret' => env('ZOHO_CLIENT_SECRET'),
+        'redirect_uri' => env('ZOHO_REDIRECT_URI'),
+        'scope' => env('ZOHO_SCOPE', 'ZohoMail.messages.CREATE,offline_access'),
+    ],
+
+];
