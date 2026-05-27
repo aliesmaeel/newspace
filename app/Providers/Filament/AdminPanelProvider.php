@@ -28,7 +28,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->brandName('')
+            ->brandName(config('brand.name'))
             ->brandLogo('/assets/neospace-logo.png')
             ->darkModeBrandLogo('/assets/neospace-logo.png')
             ->brandLogoHeight('2rem')

@@ -18,9 +18,6 @@ class IntegrationSetting extends Model
         'stripe_publishable_key',
         'stripe_secret_key',
         'stripe_webhook_secret',
-        'stripe_price_12_weeks',
-        'stripe_price_6_months',
-        'stripe_price_1_year',
         'zoom_meeting_url',
     ];
 
@@ -28,9 +25,6 @@ class IntegrationSetting extends Model
         'zoho_client_secret' => 'encrypted',
         'stripe_secret_key' => 'encrypted',
         'stripe_webhook_secret' => 'encrypted',
-        'stripe_price_12_weeks' => 'integer',
-        'stripe_price_6_months' => 'integer',
-        'stripe_price_1_year' => 'integer',
     ];
 
     public static function defaultsFromEnv(): array
@@ -47,9 +41,6 @@ class IntegrationSetting extends Model
             'stripe_publishable_key' => (string) env('STRIPE_PUBLISHABLE_KEY'),
             'stripe_secret_key' => (string) env('STRIPE_SECRET_KEY'),
             'stripe_webhook_secret' => (string) env('STRIPE_WEBHOOK_SECRET'),
-            'stripe_price_12_weeks' => env('STRIPE_PRICE_12_WEEKS'),
-            'stripe_price_6_months' => env('STRIPE_PRICE_6_MONTHS'),
-            'stripe_price_1_year' => env('STRIPE_PRICE_1_YEAR'),
             'zoom_meeting_url' => (string) env('ZOOM_MEETING_URL', ''),
         ];
     }

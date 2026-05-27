@@ -98,7 +98,7 @@ class AppointmentsTable
     {
         $start = $record->appointment_at->copy()->utc()->format('Ymd\THis\Z');
         $end = $record->appointment_at->copy()->addMinutes(30)->utc()->format('Ymd\THis\Z');
-        $text = urlencode("NeoSpace Appointment - {$record->first_name} {$record->last_name}");
+        $text = urlencode(config('brand.name')." Appointment - {$record->first_name} {$record->last_name}");
         $details = urlencode(
             "Customer: {$record->first_name} {$record->last_name}\n"
                 . "Email: {$record->email}\n"

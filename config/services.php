@@ -35,6 +35,10 @@ return [
         ],
     ],
 
+    'stripe' => [
+        'currency' => env('STRIPE_CURRENCY', 'gbp'),
+    ],
+
     'zoho' => [
         'account_hosted' => env('ZOHO_ACCOUNT_HOSTED', 'zoho.eu'),
         'accounts_base' => env('ZOHO_ACCOUNTS_BASE', 'https://accounts.zoho.eu'),

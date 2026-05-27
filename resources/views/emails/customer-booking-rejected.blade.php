@@ -17,6 +17,6 @@
     </ul>
 
     <p>Please book another slot or reply to this email for support.</p>
-    <p>Thank you,<br>NeoSpace Leadership Global</p>
+    <p>Thank you,<br>{{ config('brand.name') }}</p>
 </body>
 </html>

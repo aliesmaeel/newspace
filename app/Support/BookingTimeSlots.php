@@ -2,15 +2,21 @@
 
 namespace App\Support;
 
+use Carbon\Carbon;
+
 final class BookingTimeSlots
 {
+    public const START_MINUTES = 10 * 60;
+
+    public const END_MINUTES = 17 * 60;
+
     /**
-     * @return list<string> Labels like "9:00 AM", "9:30 AM", … "6:00 PM"
+     * @return list<string> Labels like "10:00 AM", "10:30 AM", … "5:00 PM"
      */
     public static function labels(): array
     {
         $slots = [];
-        for ($mins = 9 * 60; $mins <= 18 * 60; $mins += 30) {
+        for ($mins = self::START_MINUTES; $mins <= self::END_MINUTES; $mins += 30) {
             $h24 = intdiv($mins, 60);
             $m = $mins % 60;
             $isPm = $h24 >= 12;
@@ -25,17 +31,21 @@ final class BookingTimeSlots
         return $slots;
     }
 
+    public static function isWeekend(string $dateYmd): bool
+    {
+        $day = Carbon::createFromFormat('Y-m-d', $dateYmd)->dayOfWeek;
+
+        return in_array($day, [Carbon::SATURDAY, Carbon::SUNDAY], true);
+    }
+
     public static function isValidLabel(string $label): bool
     {
         return in_array($label, self::labels(), true);
     }
 
-    /**
-     * Convert "9:00 AM" to H:i:s for storage.
-     */
     public static function labelToTimeString(string $label): string
     {
-        $dt = \Carbon\Carbon::createFromFormat('g:i A', trim($label));
+        $dt = Carbon::createFromFormat('g:i A', trim($label));
 
         return $dt->format('H:i:s');
     }

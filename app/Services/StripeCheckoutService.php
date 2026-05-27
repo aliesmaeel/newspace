@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Appointment;
+use App\Models\Program;
 use RuntimeException;
 use Stripe\Checkout\Session;
 use Stripe\Stripe;
@@ -13,33 +14,26 @@ class StripeCheckoutService
 
     public function __construct(private IntegrationSettingsService $settings) {}
 
-    public function planCatalog(): array
+    public function getProgramBySlug(string $slug): ?Program
     {
-        return [
-            'twelve-weeks' => [
-                'name' => '12 Weeks Commitment',
-                'amount' => (int) ($this->settings->stripe('price_12_weeks', 50000)),
-            ],
-            'six-months' => [
-                'name' => '6 Months Commitment',
-                'amount' => (int) ($this->settings->stripe('price_6_months', 120000)),
-            ],
-            'one-year' => [
-                'name' => '1 Year Commitment',
-                'amount' => (int) ($this->settings->stripe('price_1_year', 240000)),
-            ],
-        ];
+        return Program::query()
+            ->where('slug', $slug)
+            ->where('is_active', true)
+            ->first();
     }
 
     public function createSession(Appointment $appointment, ?string $returnBaseUrl = null): Session
     {
-        $catalog = $this->planCatalog();
-        $plan = $catalog[$appointment->program_plan_key] ?? null;
-        if (! $plan) {
+        $program = $this->getProgramBySlug((string) $appointment->program_plan_key);
+        if (! $program) {
             throw new RuntimeException('Unknown program plan.');
         }
-        if (($plan['amount'] ?? 0) < self::MIN_AMOUNT_CENTS) {
-            throw new RuntimeException('Stripe plan amount is too low. Set at least 100 cents in Integration Settings.');
+        if (($program->price_cents ?? 0) < self::MIN_AMOUNT_CENTS) {
+            throw new RuntimeException('Stripe plan amount is too low. Set at least 100 cents in Programs.');
+        }
+        $stripePriceId = trim((string) ($program->stripe_price_id ?? ''));
+        if ($stripePriceId === '') {
+            throw new RuntimeException('Stripe subscription Price ID is missing for this program.');
         }
 
         $secretKey = (string) $this->settings->stripe('secret_key');
@@ -52,20 +46,13 @@ class StripeCheckoutService
         $appUrl = rtrim((string) ($returnBaseUrl ?: config('app.url')), '/');
 
         return Session::create([
-            'mode' => 'payment',
+            'mode' => 'subscription',
             'success_url' => "{$appUrl}/?payment=success",
             'cancel_url' => "{$appUrl}/?payment=cancelled",
             'customer_email' => $appointment->email,
             'line_items' => [[
                 'quantity' => 1,
-                'price_data' => [
-                    'currency' => 'usd',
-                    'unit_amount' => $plan['amount'],
-                    'product_data' => [
-                        'name' => $plan['name'],
-                        'description' => "Program booking for {$appointment->first_name} {$appointment->last_name}",
-                    ],
-                ],
+                'price' => $stripePriceId,
             ]],
             'metadata' => [
                 'appointment_id' => (string) $appointment->id,

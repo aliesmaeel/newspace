@@ -19,9 +19,21 @@ class TransactionsTable
                 TextColumn::make('id')
                     ->sortable(),
                 TextColumn::make('appointment_email')
-                    ->label('Appointment Email')
+                    ->label('Customer email')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('type')
+                    ->label('Type')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'event_checkout' => 'Event',
+                        'checkout' => 'Booking',
+                        default => $state,
+                    }),
+                TextColumn::make('payload.event_title')
+                    ->label('Event / details')
+                    ->placeholder('—')
+                    ->limit(40),
                 TextColumn::make('gateway')
                     ->badge(),
                 BadgeColumn::make('status')

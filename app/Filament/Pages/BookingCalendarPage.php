@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\BookingUnavailability;
 use App\Support\BookingTimeSlots;
+use Carbon\CarbonInterface;
 use BackedEnum;
 use Carbon\Carbon;
 use Filament\Notifications\Notification;
@@ -102,6 +103,9 @@ class BookingCalendarPage extends Page
         if ($day === null) {
             return 'empty';
         }
+        if ($this->isWeekend($day)) {
+            return 'weekend';
+        }
         $ymd = $day->toDateString();
         if (BookingUnavailability::query()->whereDate('blocked_date', $ymd)->where('is_full_day', true)->exists()) {
             return 'full';
@@ -115,6 +119,16 @@ class BookingCalendarPage extends Page
 
     public function openEditor(string $dateYmd): void
     {
+        if (BookingTimeSlots::isWeekend($dateYmd)) {
+            Notification::make()
+                ->title('Weekends are not bookable')
+                ->body('Saturday and Sunday are always blocked.')
+                ->warning()
+                ->send();
+
+            return;
+        }
+
         $this->editingDate = $dateYmd;
         $full = BookingUnavailability::query()
             ->whereDate('blocked_date', $dateYmd)
@@ -171,5 +185,10 @@ class BookingCalendarPage extends Page
     public function getSlotLabels(): array
     {
         return BookingTimeSlots::labels();
+    }
+
+    private function isWeekend(CarbonInterface $day): bool
+    {
+        return in_array($day->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY], true);
     }
 }

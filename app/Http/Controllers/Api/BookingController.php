@@ -9,6 +9,7 @@ use App\Models\Transaction;
 use App\Support\BookingTimeSlots;
 use App\Mail\AdminBookingCreatedMail;
 use App\Mail\CustomerBookingApprovedMail;
+use App\Models\Program;
 use App\Services\IntegrationSettingsService;
 use App\Services\StripeCheckoutService;
 use Carbon\Carbon;
@@ -19,8 +20,6 @@ use Illuminate\Validation\ValidationException;
 
 class BookingController extends Controller
 {
-    private const PAID_PROGRAMS = ['twelve-weeks', 'six-months', 'one-year'];
-
     public function availability(Request $request)
     {
         $validated = $request->validate([
@@ -108,7 +107,8 @@ class BookingController extends Controller
         }
 
         $planKey = $validated['program_plan_key'] ?? null;
-        $requiresPayment = in_array($planKey, self::PAID_PROGRAMS, true);
+        $program = $this->resolveProgram($planKey);
+        $requiresPayment = (int) ($program?->price_cents ?? 0) >= 100;
 
         $appointment = Appointment::create([
             'first_name' => $validated['first_name'],
@@ -120,7 +120,7 @@ class BookingController extends Controller
             'appointment_date' => $appointmentAt->toDateString(),
             'appointment_time' => $appointmentAt->format('H:i:s'),
             'program_plan_key' => $planKey,
-            'program_plan_name' => $this->programPlanName($planKey),
+            'program_plan_name' => $program?->title,
             'requires_payment' => $requiresPayment,
             'payment_status' => $requiresPayment ? 'pending' : 'unpaid',
             'status' => 'approved',
@@ -168,7 +168,7 @@ class BookingController extends Controller
             'message' => ['nullable', 'string', 'max:2000'],
             'date' => ['required', 'date_format:Y-m-d'],
             'time' => ['required', 'string'],
-            'program_plan_key' => ['required', 'in:twelve-weeks,six-months,one-year'],
+            'program_plan_key' => ['required', 'string', 'max:255'],
             'return_base_url' => ['nullable', 'url'],
         ]);
 
@@ -181,6 +181,12 @@ class BookingController extends Controller
         $appointmentAt = Carbon::createFromFormat('Y-m-d g:i A', "{$validated['date']} {$validated['time']}");
 
         $this->ensureSlotNotAdminBlocked($validated['date'], $validated['time']);
+
+        if (in_array($appointmentAt->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY], true)) {
+            throw ValidationException::withMessages([
+                'date' => 'Saturday and Sunday are not available.',
+            ]);
+        }
 
         $this->ensureAppointmentNotInPast($appointmentAt);
 
@@ -202,6 +208,28 @@ class BookingController extends Controller
             ], 409);
         }
 
+        $program = $this->resolveProgram($validated['program_plan_key']);
+        if (! $program) {
+            throw ValidationException::withMessages([
+                'program_plan_key' => 'Selected program is invalid.',
+            ]);
+        }
+        if ((int) $program->price_cents < 100) {
+            throw ValidationException::withMessages([
+                'program_plan_key' => 'Selected program does not require payment.',
+            ]);
+        }
+        if (trim((string) ($program->stripe_price_id ?? '')) === '') {
+            throw ValidationException::withMessages([
+                'program_plan_key' => 'Stripe subscription Price ID is missing for this program.',
+            ]);
+        }
+        if (! in_array((int) $program->billing_interval_months, Program::billingIntervalMonthOptions(), true)) {
+            throw ValidationException::withMessages([
+                'program_plan_key' => 'Billing interval is missing for this program. Sync it from the admin dashboard.',
+            ]);
+        }
+
         $appointment = Appointment::create([
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
@@ -212,7 +240,7 @@ class BookingController extends Controller
             'appointment_date' => $appointmentAt->toDateString(),
             'appointment_time' => $appointmentAt->format('H:i:s'),
             'program_plan_key' => $validated['program_plan_key'],
-            'program_plan_name' => $this->programPlanName($validated['program_plan_key']),
+            'program_plan_name' => $program->title,
             'requires_payment' => true,
             'payment_status' => 'pending',
             'status' => 'pending_payment',
@@ -229,16 +257,13 @@ class BookingController extends Controller
             'stripe_checkout_session_id' => $session->id,
         ]);
 
-        $catalog = $stripe->planCatalog();
-        $plan = $catalog[$validated['program_plan_key']] ?? null;
-
         Transaction::create([
             'appointment_email' => $appointment->email,
             'gateway' => 'stripe',
             'type' => 'checkout',
             'status' => 'pending',
-            'amount_cents' => (int) ($plan['amount'] ?? 0),
-            'currency' => 'usd',
+            'amount_cents' => (int) $program->price_cents,
+            'currency' => config('services.stripe.currency', 'gbp'),
             'external_id' => $session->id,
             'payment_intent_id' => (string) ($session->payment_intent ?? ''),
             'payload' => [
@@ -253,14 +278,16 @@ class BookingController extends Controller
         ]);
     }
 
-    private function programPlanName(?string $key): ?string
+    private function resolveProgram(?string $programSlug): ?Program
     {
-        return match ($key) {
-            'twelve-weeks' => '12 Weeks Commitment',
-            'six-months' => '6 Months Commitment',
-            'one-year' => '1 Year Commitment',
-            default => null,
-        };
+        if (! $programSlug) {
+            return null;
+        }
+
+        return Program::query()
+            ->where('slug', $programSlug)
+            ->where('is_active', true)
+            ->first();
     }
 
     private function ensureAppointmentNotInPast(Carbon $appointmentAt): void

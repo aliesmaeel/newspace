@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\InterestOption;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -17,9 +18,20 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        User::query()->updateOrCreate(
+            ['email' => 'test@example.com'],
+            [
+                'name' => 'Test User',
+                'password' => bcrypt('password'),
+                'is_admin' => true,
+            ]
+        );
+
+        foreach (['Leadership coaching', 'Programs', 'Events', 'Family business'] as $i => $label) {
+            InterestOption::query()->firstOrCreate(
+                ['label' => $label],
+                ['sort_order' => ($i + 1) * 10, 'is_active' => true]
+            );
+        }
     }
 }

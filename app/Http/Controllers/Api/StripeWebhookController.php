@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
-use App\Models\Transaction;
+use App\Models\EventRegistration;
 use App\Mail\AdminBookingCreatedMail;
+use App\Models\Event;
 use App\Services\IntegrationSettingsService;
 use App\Services\StripeCheckoutService;
+use App\Services\StripeTransactionRecorder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Stripe\Exception\SignatureVerificationException;
@@ -38,7 +40,12 @@ class StripeWebhookController extends Controller
         return null;
     }
 
-    public function __invoke(Request $request, StripeCheckoutService $stripe, IntegrationSettingsService $settings)
+    public function __invoke(
+        Request $request,
+        StripeCheckoutService $stripe,
+        IntegrationSettingsService $settings,
+        StripeTransactionRecorder $transactions,
+    )
     {
         $payload = $request->getContent();
         $signature = (string) $request->header('Stripe-Signature');
@@ -80,23 +87,26 @@ class StripeWebhookController extends Controller
                     }
                 }
 
-                Transaction::query()->updateOrCreate(
-                    [
-                        'external_id' => (string) $session->id,
-                    ],
-                    [
-                        'appointment_email' => $appointment->email,
-                        'gateway' => 'stripe',
-                        'type' => 'checkout',
-                        'status' => 'paid',
-                        'amount_cents' => (int) ($session->amount_total ?? 0),
-                        'currency' => (string) ($session->currency ?? 'usd'),
-                        'payment_intent_id' => (string) ($session->payment_intent ?? ''),
-                        'payload' => is_array($session) ? $session : json_decode(json_encode($session), true),
-                        'paid_at' => now(),
-                    ]
-                );
+                $transactions->recordCheckoutSession($session, $appointment->email, 'paid');
 
+            }
+
+            $eventRegistrationId = (int) ($session->metadata->event_registration_id ?? 0);
+            if ($eventRegistrationId > 0) {
+                $eventRegistration = EventRegistration::query()->find($eventRegistrationId);
+                if ($eventRegistration) {
+                    $eventRegistration->update([
+                        'status' => 'confirmed',
+                        'payment_status' => 'paid',
+                        'stripe_checkout_session_id' => (string) ($session->id ?? $eventRegistration->stripe_checkout_session_id),
+                        'registered_at' => now(),
+                    ]);
+
+                    $event = Event::query()->find($eventRegistration->event_id);
+                    if ($event) {
+                        $transactions->recordEventRegistrationCheckout($session, $eventRegistration, $event, 'paid');
+                    }
+                }
             }
         }
 
@@ -113,21 +123,16 @@ class StripeWebhookController extends Controller
                     ]);
                 }
 
-                Transaction::query()->updateOrCreate(
-                    [
-                        'external_id' => (string) $session->id,
-                    ],
-                    [
-                        'appointment_email' => $appointment->email,
-                        'gateway' => 'stripe',
-                        'type' => 'checkout',
-                        'status' => 'failed',
-                        'amount_cents' => (int) ($session->amount_total ?? 0),
-                        'currency' => (string) ($session->currency ?? 'usd'),
-                        'payment_intent_id' => (string) ($session->payment_intent ?? ''),
-                        'payload' => is_array($session) ? $session : json_decode(json_encode($session), true),
-                    ]
-                );
+                $transactions->recordCheckoutSession($session, $appointment->email, 'failed');
+            }
+
+            $eventRegistrationId = (int) ($session->metadata->event_registration_id ?? 0);
+            if ($eventRegistrationId > 0) {
+                $eventRegistration = EventRegistration::query()->with('user')->find($eventRegistrationId);
+                $event = $eventRegistration ? Event::query()->find($eventRegistration->event_id) : null;
+                if ($eventRegistration && $event) {
+                    $transactions->recordEventRegistrationCheckout($session, $eventRegistration, $event, 'failed');
+                }
             }
         }
 

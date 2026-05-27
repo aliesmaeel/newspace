@@ -15,6 +15,6 @@
         @include('emails.partials.zoom-meeting-link')
     </ul>
 
-    <p>Thank you,<br>NeoSpace Leadership Global</p>
+    <p>Thank you,<br>{{ config('brand.name') }}</p>
 </body>
 </html>

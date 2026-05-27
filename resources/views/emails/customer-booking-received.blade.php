@@ -4,7 +4,7 @@
     <h2 style="margin-bottom: 12px;">We received your booking</h2>
 
     <p>Hi {{ $appointment->first_name }},</p>
-    <p>Thank you for booking with NeoSpace. Your request has been received and is pending review.</p>
+    <p>Thank you for booking with {{ config('brand.name') }}. Your request has been received and is pending review.</p>
 
     <ul>
         <li><strong>Date:</strong> {{ $appointment->appointment_at->format('D, M j, Y') }}</li>
@@ -14,6 +14,6 @@
 
     <p>You will receive another email once your appointment is confirmed.</p>
 
-    <p>Thank you,<br>NeoSpace Leadership Global</p>
+    <p>Thank you,<br>{{ config('brand.name') }}</p>
 </body>
 </html>

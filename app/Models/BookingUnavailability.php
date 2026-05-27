@@ -29,6 +29,10 @@ class BookingUnavailability extends Model
     {
         $all = BookingTimeSlots::labels();
 
+        if (BookingTimeSlots::isWeekend($dateYmd)) {
+            return $all;
+        }
+
         if (static::query()->whereDate('blocked_date', $dateYmd)->where('is_full_day', true)->exists()) {
             return $all;
         }

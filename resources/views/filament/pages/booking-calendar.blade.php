@@ -145,6 +145,14 @@
         border-color: var(--bc-full-border);
     }
 
+    .booking-cal__day--weekend {
+        background: var(--bc-empty);
+        border-color: var(--bc-border);
+        color: var(--bc-muted);
+        cursor: not-allowed;
+        opacity: 0.65;
+    }
+
     .booking-cal__legend {
         display: flex;
         flex-wrap: wrap;
@@ -179,6 +187,12 @@
     .booking-cal__swatch--full {
         background: var(--bc-full-bg);
         border-color: var(--bc-full-border);
+    }
+
+    .booking-cal__swatch--weekend {
+        background: var(--bc-empty);
+        border-color: var(--bc-border);
+        opacity: 0.65;
     }
 
     .booking-cal-modal {
@@ -329,7 +343,7 @@
     </div>
 
     <p class="booking-cal__help">
-        Click a day to block the whole day or specific 30-minute slots (9:00 AM–6:00 PM). The public booking page uses the same slots.
+        Click a weekday to block the whole day or specific 30-minute slots (10:00 AM–5:00 PM). Saturday and Sunday are always blocked.
     </p>
 
     <div class="booking-cal__weekdays" aria-hidden="true">
@@ -352,8 +366,9 @@
                         @php($state = $this->dayState($day))
                         <button
                             type="button"
-                            class="booking-cal__day @if ($state === 'partial') booking-cal__day--partial @elseif ($state === 'full') booking-cal__day--full @endif"
-                            wire:click="openEditor('{{ $day->toDateString() }}')"
+                            @disabled($state === 'weekend')
+                            class="booking-cal__day @if ($state === 'partial') booking-cal__day--partial @elseif ($state === 'full') booking-cal__day--full @elseif ($state === 'weekend') booking-cal__day--weekend @endif"
+                            @if ($state !== 'weekend') wire:click="openEditor('{{ $day->toDateString() }}')" @endif
                         >
                             {{ $day->day }}
                         </button>
@@ -364,6 +379,10 @@
     </div>
 
     <div class="booking-cal__legend">
+        <span class="booking-cal__legend-item">
+            <span class="booking-cal__swatch booking-cal__swatch--weekend" aria-hidden="true"></span>
+            Weekend (blocked)
+        </span>
         <span class="booking-cal__legend-item">
             <span class="booking-cal__swatch" aria-hidden="true"></span>
             Available

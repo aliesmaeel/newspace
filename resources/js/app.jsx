@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { AuthProvider, useAuth } from "./AuthContext";
+import { LoginPage, RegisterPage, RegistrationPopup } from "./AuthPages";
+import { EventsPage, EventDetailPage } from "./EventPages";
+import { BRAND_NAME } from "./brand";
 import "./bootstrap";
 
 const navItems = [
@@ -8,6 +12,7 @@ const navItems = [
     { label: "Our Services", to: "/services" },
     { label: "Giving Back", to: { pathname: "/", hash: "#giving-back" } },
     { label: "Our Programs", to: "/programs" },
+    { label: "Events", to: "/events" },
     { label: "Booking", to: "/booking" },
     { label: "Contact", to: "/contact" },
 ];
@@ -33,63 +38,34 @@ const services = [
     },
 ];
 
-const programs = [
+const fallbackPrograms = [
     {
-        key: "twelve-weeks",
-        duration: "12 Weeks Time Commitment",
-        name: "12 Weeks Commitment",
-        kicker: "NO FINANCIAL OBLIGATION",
-        details: "Biweekly group coaching addressing the following areas:",
-        points: [
-            "Idea",
-            "Brand",
-            "Productization/ Packages",
-            "Team & Partners",
-            "Cash Flow",
-            "Systems",
-        ],
-        ctaLabel: "Book now",
+        slug: "twelve-weeks",
+        title: "12 Weeks Commitment",
+        description:
+            "<p>Biweekly group coaching addressing the following areas:</p><ul><li>Idea</li><li>Brand</li><li>Productization/ Packages</li><li>Team &amp; Partners</li><li>Cash Flow</li><li>Systems</li></ul>",
+        image_url: "/assets/program-12-weeks.png",
+        price_cents: 0,
+        billing_interval_months: null,
+        price_label: "Free",
     },
     {
-        key: "six-months",
-        duration: "6 Months Commitment",
-        name: "6 Months Commitment",
-        details: "Biweekly group coaching addressing the following areas:",
-        points: [
-            "Fundraising",
-            "Idea",
-            "Brand",
-            "Productization/ Packages",
-            "Team & Partners",
-            "Cash Flow",
-            "Systems",
-            "Kick off Retreat: two days and a night in a 4-star hotel in the UK (all included) - Mind and Life Mastery Event - (Oct 2024)",
-            "The Leadership Game in the Age of AI (2 sessions)",
-            "Wealth Building Strategies",
-            "Closing Retreat: two days and a night in a 4-star hotel in the UK (all included) - Break-Through to Success - (Mar 2025)",
-        ],
-        ctaLabel: "Book now",
+        slug: "six-months",
+        title: "6 Months Commitment",
+        description: "Biweekly group coaching with retreats, leadership game sessions, and wealth-building strategies.",
+        image_url: "/assets/program-6-months.png",
+        price_cents: 120000,
+        billing_interval_months: 1,
+        price_label: "£1,200.00 / month",
     },
     {
-        key: "one-year",
-        duration: "1 Year Commitment",
-        name: "1 Year Commitment",
-        details: "Biweekly Platinum Mastermind Session including:",
-        points: [
-            "The Circle of Excellence Memberships with global community weekly webinar every Tuesday with global entrepreneurs",
-            "Kick off Retreat: two days and a night in a 4-star hotel in the UK (all included) - Mind and Life Mastery Event (Nov 2024)",
-            "Second Retreat: two days and a night in a 4-star hotel in the UK (all included) - Break-through to Success (Mar 2025)",
-            "Third Retreat: two days and a night - Scale Your Business - Sales and Marketing. In a 4-star hotel in the UK (Jun 2025)",
-            "Fourth Retreat: Bali Business School – 5 days event fully paid in a private villa in Bali, Indonesia (Sep 2025)",
-            "Entrepreneur “X” Factor Exchange program / Up to GBP 2000 sponsorship.",
-            "The Leadership Game (6 sessions)",
-            "Wealth Building Strategies with a professional global wealth builder.",
-            "Soul-mate coaching for 6 sessions with a highly-qualified global coach",
-            "DISC Code and report interpretation with a senior DISC Consultant.",
-            "Limiting beliefs coaching for 6 sessions.",
-            "Fundraising",
-        ],
-        ctaLabel: "Book now",
+        slug: "one-year",
+        title: "1 Year Commitment",
+        description: "Platinum mastermind with retreats, coaching sessions, and global community benefits.",
+        image_url: "/assets/program-1-year.png",
+        price_cents: 240000,
+        billing_interval_months: 12,
+        price_label: "£2,400.00 / 12 months",
     },
 ];
 
@@ -168,15 +144,56 @@ function ContactInquiryForm() {
     );
 }
 
+function EmailVerificationNotice() {
+    const { user, resendVerificationEmail } = useAuth();
+    const [message, setMessage] = useState("");
+    const [error, setError] = useState("");
+    const [sending, setSending] = useState(false);
+
+    if (!user || user.email_verified) {
+        return null;
+    }
+
+    async function handleResend() {
+        setSending(true);
+        setError("");
+        setMessage("");
+        try {
+            const text = await resendVerificationEmail();
+            setMessage(text);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setSending(false);
+        }
+    }
+
+    return (
+        <div className="email-verify-banner container">
+            <p>
+                Please verify your email address. Check your inbox for the welcome email, or{" "}
+                <button type="button" className="email-verify-banner-link" disabled={sending} onClick={handleResend}>
+                    {sending ? "Sending…" : "resend verification email"}
+                </button>
+                .
+            </p>
+            {message && <p className="booking-success">{message}</p>}
+            {error && <p className="booking-error">{error}</p>}
+        </div>
+    );
+}
+
 function Layout({ children }) {
     const location = useLocation();
+    const { user, logout } = useAuth();
 
     return (
         <div className="page">
+            <EmailVerificationNotice />
             <header className="topbar">
                 <div className="container topbar-inner">
-                    <a className="brand" href="/" aria-label="NeoSpace">
-                        <img src="/assets/neospace-logo.png" alt="NeoSpace logo" />
+                    <a className="brand" href="/" aria-label={BRAND_NAME}>
+                        <img src="/assets/neospace-logo.png" alt={`${BRAND_NAME} logo`} />
                     </a>
                     <nav className="nav">
                         {navItems.map((item) => {
@@ -202,15 +219,37 @@ function Layout({ children }) {
                                 </NavLink>
                             );
                         })}
+                        {user ? (
+                            <>
+                                <span className="nav-link nav-link-muted">Hi, {user.name.split(" ")[0]}</span>
+                                <button type="button" className="nav-link nav-link-btn" onClick={() => logout()}>
+                                    Log out
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <NavLink
+                                    to="/login"
+                                    className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+                                >
+                                    Log in
+                                </NavLink>
+                                <NavLink
+                                    to="/register"
+                                    className={({ isActive }) => `nav-link nav-link-register ${isActive ? "active" : ""}`}
+                                >
+                                    Register
+                                </NavLink>
+                            </>
+                        )}
                     </nav>
-                  
                 </div>
             </header>
             <main>{children}</main>
             <footer className="footer">
                 <div className="container footer-inner">
-                    <p>NeoSpace Leadership Global</p>
-                    <p>Copyright NeoSpace Global 2025.</p>
+                    <p>{BRAND_NAME}</p>
+                    <p>Copyright {BRAND_NAME} {new Date().getFullYear()}.</p>
                 </div>
             </footer>
         </div>
@@ -219,6 +258,7 @@ function Layout({ children }) {
 
 function HomePage() {
     const location = useLocation();
+    const { refreshUser } = useAuth();
     const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
     const paymentResult = query.get("payment");
     const [showHomePopup, setShowHomePopup] = useState(false);
@@ -234,6 +274,8 @@ function HomePage() {
         return () => window.clearTimeout(timer);
     }, [location.pathname, location.hash]);
 
+    const verifiedResult = query.get("verified");
+
     useEffect(() => {
         if (paymentResult === "success") {
             setHomePopupMessage("Payment received. Your appointment is confirmed.");
@@ -241,14 +283,25 @@ function HomePage() {
         } else if (paymentResult === "cancelled") {
             setHomePopupMessage("Payment was cancelled. Please book again when ready.");
             setShowHomePopup(true);
+        } else if (verifiedResult === "1") {
+            refreshUser();
+            setHomePopupMessage("Your email has been verified. Thank you!");
+            setShowHomePopup(true);
+        } else if (verifiedResult === "already") {
+            setHomePopupMessage("Your email was already verified.");
+            setShowHomePopup(true);
+        } else if (verifiedResult === "invalid") {
+            setHomePopupMessage("This verification link is invalid or has expired.");
+            setShowHomePopup(true);
         }
-    }, [paymentResult]);
+    }, [paymentResult, verifiedResult]);
 
     function closeHomePopup() {
         setShowHomePopup(false);
         const url = new URL(window.location.href);
         url.searchParams.delete("payment");
         url.searchParams.delete("session_id");
+        url.searchParams.delete("verified");
         window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
     }
 
@@ -256,10 +309,10 @@ function HomePage() {
         <Layout>
             <section className="hero-wrap">
                 <div className="hero container">
-                    <p className="eyebrow">NeoSpace Leadership Global</p>
+                    <p className="eyebrow">{BRAND_NAME}</p>
                     <h1>Personal and professional growth converge here.</h1>
                     <p className="lead">
-                        Founded by Raouda Sakour, NeoSpace helps leaders, entrepreneurs, and family businesses unlock their next level
+                        Founded by Raouda Sakour, {BRAND_NAME} helps leaders, entrepreneurs, and family businesses unlock their next level
                         through coaching, transformational programs, and strategic guidance.
                     </p>
                     <div className="hero-actions">
@@ -273,10 +326,10 @@ function HomePage() {
                 </div>
             </section>
             <section className="container section intro-section">
-                <p className="eyebrow">About NeoSpace</p>
-                <h2>Welcome to NeoSpace, where personal and professional growth converge.</h2>
+                <p className="eyebrow">About {BRAND_NAME}</p>
+                <h2>Welcome to {BRAND_NAME}, where personal and professional growth converge.</h2>
                 <p className="lead">
-                    Founded by Raouda Sakour in August 2023, NeoSpace helps individuals and organizations unlock potential and reach
+                    Founded by Raouda Sakour in August 2023, {BRAND_NAME} helps individuals and organizations unlock potential and reach
                     new heights—through coaching, leadership development, and holistic growth. We guide you past barriers, clarify
                     meaningful goals, and build the skills to succeed as your partners in progress, not just a service.
                 </p>
@@ -288,7 +341,7 @@ function HomePage() {
                 <p className="eyebrow">Our Services</p>
                 <h2>Methodologies that move you forward</h2>
                 <p className="lead">
-                    At NeoSpace we apply proven methodologies as catalysts for change—so individuals and organizations can adapt, solve
+                    At {BRAND_NAME} we apply proven methodologies as catalysts for change—so individuals and organizations can adapt, solve
                     what matters most with clarity and foresight, and thrive in a shifting landscape. We work with results in mind,
                     walk with you to breakthrough, and help already-successful leaders reach the next level with new ways of thinking.
                 </p>
@@ -307,8 +360,8 @@ function HomePage() {
                     <p className="eyebrow">Giving Back</p>
                     <h2>Empowering Through Social Responsibility</h2>
                     <p>
-                        At NeoSpace, we believe in making a difference. That&apos;s why XX% of the net profit from our services goes
-                        toward educational initiatives that foster growth. By choosing NeoSpace, you become a part of this change.
+                        At {BRAND_NAME}, we believe in making a difference. That&apos;s why XX% of the net profit from our services goes
+                        toward educational initiatives that foster growth. By choosing {BRAND_NAME}, you become a part of this change.
                     </p>
                     <a className="btn btn-primary impact-band-cta" href="mailto:raouda@neospaceglobal.com">
                         Get in touch
@@ -379,14 +432,14 @@ function ServicesPage() {
                 <p className="eyebrow">Our Services</p>
                 <h2>Transformative experiences that inspire conscious leadership.</h2>
                 <p className="lead">
-                    At Neospace, we are dedicated to creating transformative experiences that inspire conscious leadership and
+                    At {BRAND_NAME}, we are dedicated to creating transformative experiences that inspire conscious leadership and
                     meaningful impact. Our services are designed to foster deep, authentic connections through personalized coaching,
                     thought-provoking workshops, and innovative events.
                 </p>
                 <p className="lead">
                     Raouda's unique approach blends wisdom, empathy, and strategic insight to help individuals and organizations
                     unlock their potential and make a lasting difference. Whether it's through intimate one-on-one sessions or dynamic
-                    group settings, Neospace is a haven for growth, where each conversation ignites new possibilities for personal and
+                    group settings, {BRAND_NAME} is a haven for growth, where each conversation ignites new possibilities for personal and
                     professional development.
                 </p>
 
@@ -463,6 +516,34 @@ function ServicesPage() {
 }
 
 function ProgramsPage() {
+    const [programs, setPrograms] = useState(fallbackPrograms);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function fetchPrograms() {
+            try {
+                const response = await fetch("/api/programs");
+                if (!response.ok) {
+                    return;
+                }
+                const payload = await response.json();
+                const items = Array.isArray(payload.programs) ? payload.programs : [];
+                if (!cancelled && items.length > 0) {
+                    setPrograms(items);
+                }
+            } catch {
+                // Keep fallback programs when API is unavailable.
+            }
+        }
+
+        fetchPrograms();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     return (
         <Layout>
             <section className="programs-hero">
@@ -477,20 +558,24 @@ function ProgramsPage() {
                 </p>
                 <div className="programs-stack">
                     {programs.map((program) => (
-                        <article className="card program-card" key={program.name}>
-                            <div className={`program-image ${program.key}`} />
+                        <article className="card program-card" key={program.slug}>
+                            <div
+                                className="program-image"
+                                style={{
+                                    backgroundImage: `linear-gradient(to bottom, rgba(12, 11, 10, 0.15), rgba(12, 11, 10, 0.4)), url("${program.image_url || "/assets/program-12-weeks.png"}")`,
+                                }}
+                            />
                             <div className="program-content">
-                                <p className="duration">{program.duration}</p>
-                                {program.kicker ? <p className="program-kicker">{program.kicker}</p> : null}
-                                <h3>{program.name}</h3>
-                                <p className="program-details">{program.details}</p>
-                                <ul>
-                                    {program.points.map((point) => (
-                                        <li key={point}>{point}</li>
-                                    ))}
-                                </ul>
-                                <a className="btn btn-dark" href={`/booking?plan=${program.key}`}>
-                                    {program.ctaLabel ?? "Apply now"}
+                                <p className="duration">{program.price_label || "Free"}</p>
+                                <h3>{program.title}</h3>
+                                <div
+                                    className="program-details"
+                                    dangerouslySetInnerHTML={{
+                                        __html: program.description || "<p>Program details will be shared during booking.</p>",
+                                    }}
+                                />
+                                <a className="btn btn-dark" href={`/booking?plan=${program.slug}`}>
+                                    Book now
                                 </a>
                             </div>
                         </article>
@@ -544,16 +629,16 @@ function BookingPage() {
     const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
     const selectedProgramPlan = query.get("plan");
     const paymentResult = query.get("payment");
-    const paidPlanLabels = {
-        "twelve-weeks": "12 Weeks Commitment",
-        "six-months": "6 Months Commitment",
-        "one-year": "1 Year Commitment",
-    };
-    const isPaidProgram = Boolean(selectedProgramPlan && paidPlanLabels[selectedProgramPlan]);
+    const [programCatalog, setProgramCatalog] = useState(fallbackPrograms);
+    const selectedProgram = useMemo(
+        () => programCatalog.find((program) => program.slug === selectedProgramPlan) || null,
+        [programCatalog, selectedProgramPlan]
+    );
+    const isPaidProgram = Boolean(selectedProgram && Number(selectedProgram.price_cents) >= 100);
 
     const timeSlots = useMemo(() => {
         const out = [];
-        for (let mins = 9 * 60; mins <= 18 * 60; mins += 30) {
+        for (let mins = 10 * 60; mins <= 17 * 60; mins += 30) {
             const h24 = Math.floor(mins / 60);
             const m = mins % 60;
             const isPm = h24 >= 12;
@@ -600,6 +685,32 @@ function BookingPage() {
     });
     const [submitted, setSubmitted] = useState(false);
     const [clockTick, setClockTick] = useState(0);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function fetchPrograms() {
+            try {
+                const response = await fetch("/api/programs");
+                if (!response.ok) {
+                    return;
+                }
+                const payload = await response.json();
+                const items = Array.isArray(payload.programs) ? payload.programs : [];
+                if (!cancelled && items.length > 0) {
+                    setProgramCatalog(items);
+                }
+            } catch {
+                // Keep fallback programs when API is unavailable.
+            }
+        }
+
+        fetchPrograms();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     useEffect(() => {
         const id = window.setInterval(() => setClockTick((n) => n + 1), 60000);
@@ -758,8 +869,8 @@ function BookingPage() {
                 <h2>Choose a date, time slot, and submit your details.</h2>
                 {isPaidProgram && (
                     <p className="lead">
-                        You selected <strong>{paidPlanLabels[selectedProgramPlan]}</strong>. After submitting this form, you will be
-                        redirected to Stripe to complete payment.
+                        You selected <strong>{selectedProgram?.title}</strong> ({selectedProgram?.price_label}). After
+                        submitting this form, you will be redirected to Stripe to start your subscription.
                     </p>
                 )}
                 {paymentResult === "cancelled" && (
@@ -923,15 +1034,22 @@ function ContactPage() {
 
 function App() {
     return (
-        <BrowserRouter>
-            <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/services" element={<ServicesPage />} />
-                <Route path="/programs" element={<ProgramsPage />} />
-                <Route path="/booking" element={<BookingPage />} />
-                <Route path="/contact" element={<ContactPage />} />
-            </Routes>
-        </BrowserRouter>
+        <AuthProvider>
+            <BrowserRouter>
+                <RegistrationPopup />
+                <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/services" element={<ServicesPage />} />
+                    <Route path="/programs" element={<ProgramsPage />} />
+                    <Route path="/events" element={<EventsPage Layout={Layout} />} />
+                    <Route path="/events/:slug" element={<EventDetailPage Layout={Layout} />} />
+                    <Route path="/booking" element={<BookingPage />} />
+                    <Route path="/contact" element={<ContactPage />} />
+                    <Route path="/login" element={<LoginPage Layout={Layout} />} />
+                    <Route path="/register" element={<RegisterPage Layout={Layout} />} />
+                </Routes>
+            </BrowserRouter>
+        </AuthProvider>
     );
 }
 

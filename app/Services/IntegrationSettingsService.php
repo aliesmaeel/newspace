@@ -59,9 +59,6 @@ class IntegrationSettingsService
             'publishable_key' => $settings->stripe_publishable_key,
             'secret_key' => $settings->stripe_secret_key,
             'webhook_secret' => $settings->stripe_webhook_secret,
-            'price_12_weeks' => $settings->stripe_price_12_weeks,
-            'price_6_months' => $settings->stripe_price_6_months,
-            'price_1_year' => $settings->stripe_price_1_year,
             default => null,
         };
 
