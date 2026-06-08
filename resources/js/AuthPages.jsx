@@ -95,6 +95,16 @@ export function RegisterPage({ Layout }) {
         setForm((prev) => ({ ...prev, [field]: value }));
     }
 
+    const emptyForm = {
+        name: "",
+        email: "",
+        password: "",
+        password_confirmation: "",
+        phone: "",
+        interest_option_id: "",
+        hear_about_us: "",
+    };
+
     async function handleSubmit(e) {
         e.preventDefault();
         setError("");
@@ -105,6 +115,7 @@ export function RegisterPage({ Layout }) {
                 phone: form.phone || null,
             });
             const msg = data?.message || "Welcome! Please check your email to verify your account.";
+            setForm(emptyForm);
             setSuccess(data?.email_sent === false ? `${msg} You can use “Resend verification email” after signing in.` : msg);
         } catch (err) {
             setError(err.message);
@@ -229,17 +240,26 @@ export function RegistrationPopup() {
                 interest_option_id: form.interest_option_id || null,
                 phone: form.phone || null,
             });
+            setForm({
+                name: "",
+                email: "",
+                password: "",
+                password_confirmation: "",
+                phone: "",
+                interest_option_id: "",
+                hear_about_us: "",
+            });
             setSuccess(true);
             setError("");
             window.setTimeout(() => {
                 dismiss();
-            }, 4000);
+            }, 5000);
         } catch (err) {
             setError(err.message);
         }
     }
 
-    if (!visible || user) {
+    if (!visible || (user && !success)) {
         return null;
     }
 
@@ -249,7 +269,10 @@ export function RegistrationPopup() {
                 <h3>Join {BRAND_NAME}</h3>
                 <p>Create a free account to book programs and attend events.</p>
                 {success ? (
-                    <p className="booking-success">Welcome! Check your email for a verification link.</p>
+                    <>
+                        <p className="booking-success">Registration successful!</p>
+                        <p>Welcome! Please check your email for a verification link, then log in to continue.</p>
+                    </>
                 ) : (
                     <form className="booking-form" onSubmit={handleSubmit}>
                         <input type="text" placeholder="Full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
