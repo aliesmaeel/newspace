@@ -64,4 +64,29 @@ class IntegrationSettingsService
 
         return $value ?? $fallback;
     }
+
+    public function logoUrl(): string
+    {
+        $path = trim((string) ($this->get()->logo_path ?? ''));
+
+        return self::resolvePublicAssetUrl($path, '/assets/neospace-logo.png');
+    }
+
+    public static function resolvePublicAssetUrl(string $path, string $fallback): string
+    {
+        $path = trim($path);
+        if ($path === '') {
+            return $fallback;
+        }
+
+        if (
+            str_starts_with($path, 'http://')
+            || str_starts_with($path, 'https://')
+            || str_starts_with($path, '/')
+        ) {
+            return $path;
+        }
+
+        return '/storage/' . ltrim($path, '/');
+    }
 }

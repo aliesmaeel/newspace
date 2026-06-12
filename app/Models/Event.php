@@ -67,4 +67,17 @@ class Event extends Model
     {
         return $this->location_type === 'virtual';
     }
+
+    public function mapUrl(): ?string
+    {
+        if ($this->latitude && $this->longitude) {
+            return 'https://www.google.com/maps?q=' . $this->latitude . ',' . $this->longitude;
+        }
+
+        if (filled($this->address)) {
+            return 'https://www.google.com/maps/search/?api=1&query=' . urlencode((string) $this->address);
+        }
+
+        return null;
+    }
 }

@@ -14,6 +14,7 @@ class StripeEventCheckoutService
     public function __construct(
         private IntegrationSettingsService $settings,
         private StripeTransactionRecorder $transactions,
+        private EventRegistrationNotificationService $notifications,
     ) {}
 
     public function createSession(EventRegistration $registration, Event $event, ?string $returnBaseUrl = null): Session
@@ -105,6 +106,8 @@ class StripeEventCheckoutService
         if ($event) {
             $this->transactions->recordEventRegistrationCheckout($session, $registration, $event, 'paid');
         }
+
+        $this->notifications->sendConfirmation($registration);
 
         return true;
     }

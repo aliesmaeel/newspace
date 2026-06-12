@@ -7,6 +7,7 @@ use App\Models\Appointment;
 use App\Models\EventRegistration;
 use App\Mail\AdminBookingCreatedMail;
 use App\Models\Event;
+use App\Services\EventRegistrationNotificationService;
 use App\Services\IntegrationSettingsService;
 use App\Services\StripeCheckoutService;
 use App\Services\StripeTransactionRecorder;
@@ -45,6 +46,7 @@ class StripeWebhookController extends Controller
         StripeCheckoutService $stripe,
         IntegrationSettingsService $settings,
         StripeTransactionRecorder $transactions,
+        EventRegistrationNotificationService $eventRegistrationNotifications,
     )
     {
         $payload = $request->getContent();
@@ -106,6 +108,8 @@ class StripeWebhookController extends Controller
                     if ($event) {
                         $transactions->recordEventRegistrationCheckout($session, $eventRegistration, $event, 'paid');
                     }
+
+                    $eventRegistrationNotifications->sendConfirmation($eventRegistration);
                 }
             }
         }

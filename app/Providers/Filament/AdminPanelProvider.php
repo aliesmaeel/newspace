@@ -10,6 +10,7 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use App\Services\IntegrationSettingsService;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -23,14 +24,16 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+        $logoUrl = app(IntegrationSettingsService::class)->logoUrl();
+
         return $panel
             ->default()
             ->id('admin')
             ->path('admin')
             ->login()
             ->brandName(config('brand.name'))
-            ->brandLogo('/assets/neospace-logo.png')
-            ->darkModeBrandLogo('/assets/neospace-logo.png')
+            ->brandLogo($logoUrl)
+            ->darkModeBrandLogo($logoUrl)
             ->brandLogoHeight('2rem')
             ->sidebarCollapsibleOnDesktop()
             ->databaseNotifications()

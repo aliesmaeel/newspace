@@ -16,11 +16,13 @@ class EventRegistration extends Model
         'event_promo_code_id',
         'stripe_checkout_session_id',
         'registered_at',
+        'confirmation_email_sent_at',
     ];
 
     protected $casts = [
         'used_first_event_free' => 'boolean',
         'registered_at' => 'datetime',
+        'confirmation_email_sent_at' => 'datetime',
     ];
 
     public function event(): BelongsTo

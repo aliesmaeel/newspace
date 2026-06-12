@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\IntegrationSettings\Schemas;
 
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -12,6 +13,22 @@ class IntegrationSettingForm
     {
         return $schema
             ->components([
+                Section::make('Branding')
+                    ->description('Logo shown in the website header and admin dashboard.')
+                    ->schema([
+                        FileUpload::make('logo_path')
+                            ->label('Site logo')
+                            ->disk('public')
+                            ->directory('branding')
+                            ->visibility('public')
+                            ->image()
+                            ->imageEditor()
+                            ->openable()
+                            ->downloadable()
+                            ->helperText('Recommended: PNG or SVG with transparent background. Leave empty to use the default logo.'),
+                    ])
+                    ->columns(1)
+                    ->columnSpanFull(),
                 Section::make('Meetings')
                     ->description('Shared link included in booking emails to customers and admins.')
                     ->schema([

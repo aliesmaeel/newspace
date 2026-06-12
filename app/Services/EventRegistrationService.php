@@ -13,6 +13,7 @@ class EventRegistrationService
 {
     public function __construct(
         private StripeEventCheckoutService $checkout,
+        private EventRegistrationNotificationService $notifications,
     ) {}
 
     /**
@@ -62,6 +63,8 @@ class EventRegistrationService
             if ($promo) {
                 $promo->increment('uses_count');
             }
+
+            $this->notifications->sendConfirmation($registration);
 
             return [
                 'status' => 'confirmed',

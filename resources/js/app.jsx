@@ -4,7 +4,7 @@ import { BrowserRouter, Link, NavLink, Route, Routes, useLocation } from "react-
 import { AuthProvider, useAuth } from "./AuthContext";
 import { LoginPage, RegisterPage, RegistrationPopup } from "./AuthPages";
 import { EventsPage, EventDetailPage } from "./EventPages";
-import { BRAND_NAME } from "./brand";
+import { BRAND_LOGO, BRAND_NAME } from "./brand";
 import "./bootstrap";
 
 const navItems = [
@@ -193,7 +193,7 @@ function Layout({ children }) {
             <header className="topbar">
                 <div className="container topbar-inner">
                     <a className="brand" href="/" aria-label={BRAND_NAME}>
-                        <img src="/assets/neospace-logo.png" alt={`${BRAND_NAME} logo`} />
+                        <img src={BRAND_LOGO} alt={`${BRAND_NAME} logo`} />
                     </a>
                     <nav className="nav">
                         {navItems.map((item) => {

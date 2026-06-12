@@ -172,7 +172,7 @@ export function EventDetailPage({ Layout }) {
                 {isVirtual && event.virtual_link ? (
                     <p className="lead">
                         <strong>Meeting link:</strong>{" "}
-                        <a href={event.virtual_link} target="_blank" rel="noopener noreferrer">
+                        <a href={event.virtual_link} target="_blank" rel="noopener noreferrer" style={{ color: "#0057ff" }}>
                             Join online
                         </a>
                     </p>
