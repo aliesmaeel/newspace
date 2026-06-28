@@ -3,10 +3,12 @@
 namespace App\Services;
 
 use App\Models\Event;
+use App\Models\EventPromoCode;
 use App\Models\EventRegistration;
 use App\Models\Transaction;
 use RuntimeException;
 use Stripe\Checkout\Session;
+use Stripe\Coupon;
 use Stripe\Stripe;
 
 class StripeEventCheckoutService
@@ -17,7 +19,7 @@ class StripeEventCheckoutService
         private EventRegistrationNotificationService $notifications,
     ) {}
 
-    public function createSession(EventRegistration $registration, Event $event, ?string $returnBaseUrl = null): Session
+    public function createSession(EventRegistration $registration, Event $event, ?string $returnBaseUrl = null, ?EventPromoCode $promo = null): Session
     {
         $priceId = trim((string) $event->stripe_price_id);
         if ($priceId === '') {
@@ -35,7 +37,7 @@ class StripeEventCheckoutService
 
         $registration->loadMissing('user');
 
-        $session = Session::create([
+        $sessionPayload = [
             'mode' => 'payment',
             'success_url' => "{$appUrl}/events/{$event->slug}?registration=success&session_id={CHECKOUT_SESSION_ID}",
             'cancel_url' => "{$appUrl}/events/{$event->slug}?registration=cancelled",
@@ -49,7 +51,14 @@ class StripeEventCheckoutService
                 'event_id' => (string) $event->id,
                 'user_id' => (string) $registration->user_id,
             ],
-        ]);
+        ];
+
+        $couponId = $this->resolveCouponId($promo);
+        if ($couponId !== null) {
+            $sessionPayload['discounts'] = [['coupon' => $couponId]];
+        }
+
+        $session = Session::create($sessionPayload);
 
         $this->transactions->recordEventRegistrationCheckout(
             $session,
@@ -59,6 +68,41 @@ class StripeEventCheckoutService
         );
 
         return $session;
+    }
+
+    /**
+     * Ensure a Stripe Coupon exists for a partial-discount promo code and return its id.
+     * Returns null when there is no applicable discount (no promo, full/zero discount).
+     */
+    private function resolveCouponId(?EventPromoCode $promo): ?string
+    {
+        if ($promo === null) {
+            return null;
+        }
+
+        $percentage = (int) $promo->discount_percentage;
+        if ($percentage <= 0 || $percentage >= 100) {
+            return null;
+        }
+
+        $existing = trim((string) $promo->stripe_coupon_id);
+        if ($existing !== '') {
+            return $existing;
+        }
+
+        $coupon = Coupon::create([
+            'percent_off' => $percentage,
+            'duration' => 'once',
+            'name' => $promo->code,
+            'metadata' => [
+                'event_promo_code_id' => (string) $promo->id,
+                'event_id' => (string) $promo->event_id,
+            ],
+        ]);
+
+        $promo->update(['stripe_coupon_id' => $coupon->id]);
+
+        return $coupon->id;
     }
 
     /**
@@ -95,12 +139,18 @@ class StripeEventCheckoutService
             return false;
         }
 
+        $wasConfirmed = $registration->status === 'confirmed';
+
         $registration->update([
             'status' => 'confirmed',
             'payment_status' => 'paid',
             'stripe_checkout_session_id' => (string) ($session->id ?? $sessionId),
             'registered_at' => $registration->registered_at ?? now(),
         ]);
+
+        if (! $wasConfirmed && $registration->event_promo_code_id) {
+            EventPromoCode::query()->whereKey($registration->event_promo_code_id)->increment('uses_count');
+        }
 
         $event = Event::query()->find($registration->event_id);
         if ($event) {

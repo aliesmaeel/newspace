@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Event extends Model
@@ -11,6 +12,7 @@ class Event extends Model
     protected $fillable = [
         'slug',
         'title',
+        'event_type_id',
         'description',
         'image_url',
         'location_type',
@@ -25,6 +27,7 @@ class Event extends Model
         'starts_at',
         'ends_at',
         'is_active',
+        'first_time_free',
         'sort_order',
     ];
 
@@ -32,12 +35,18 @@ class Event extends Model
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
         'is_active' => 'boolean',
+        'first_time_free' => 'boolean',
         'price_cents' => 'integer',
         'billing_interval_months' => 'integer',
         'latitude' => 'float',
         'longitude' => 'float',
         'sort_order' => 'integer',
     ];
+
+    public function eventType(): BelongsTo
+    {
+        return $this->belongsTo(EventType::class);
+    }
 
     public function registrations(): HasMany
     {

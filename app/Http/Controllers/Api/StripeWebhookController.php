@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
+use App\Models\EventPromoCode;
 use App\Models\EventRegistration;
 use App\Mail\AdminBookingCreatedMail;
 use App\Models\Event;
@@ -97,12 +98,18 @@ class StripeWebhookController extends Controller
             if ($eventRegistrationId > 0) {
                 $eventRegistration = EventRegistration::query()->find($eventRegistrationId);
                 if ($eventRegistration) {
+                    $wasConfirmed = $eventRegistration->status === 'confirmed';
+
                     $eventRegistration->update([
                         'status' => 'confirmed',
                         'payment_status' => 'paid',
                         'stripe_checkout_session_id' => (string) ($session->id ?? $eventRegistration->stripe_checkout_session_id),
                         'registered_at' => now(),
                     ]);
+
+                    if (! $wasConfirmed && $eventRegistration->event_promo_code_id) {
+                        EventPromoCode::query()->whereKey($eventRegistration->event_promo_code_id)->increment('uses_count');
+                    }
 
                     $event = Event::query()->find($eventRegistration->event_id);
                     if ($event) {

@@ -18,12 +18,20 @@ class EventForm
         return $schema
             ->components([
                 TextInput::make('title')->required()->maxLength(255)->live(onBlur: true)
-                    ->afterStateUpdated(function ($state, callable $set, callable $get): void {
-                        if ((string) $get('slug') === '') {
-                            $set('slug', Str::slug((string) $state));
-                        }
+                    ->afterStateUpdated(function ($state, callable $set): void {
+                        $set('slug', Str::slug((string) $state));
                     }),
-                TextInput::make('slug')->required()->maxLength(255)->unique(ignoreRecord: true),
+                TextInput::make('slug')->required()->maxLength(255)->unique(ignoreRecord: true)
+                    ->helperText('Auto-generated from the title. You can still edit it.'),
+                Select::make('event_type_id')
+                    ->label('Event type')
+                    ->relationship('eventType', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->required()
+                    ->createOptionForm([
+                        TextInput::make('name')->required()->maxLength(255),
+                    ]),
                 RichEditor::make('description')->columnSpanFull(),
                 FileUpload::make('image_url')->label('Event image')->disk('public')->directory('events')->image()->columnSpanFull(),
                 Select::make('location_type')->options(['physical' => 'Physical', 'virtual' => 'Virtual'])->required()->default('physical'),
@@ -36,6 +44,10 @@ class EventForm
                 DateTimePicker::make('ends_at'),
                 TextInput::make('sort_order')->numeric()->default(0)->required(),
                 Toggle::make('is_active')->default(true)->required(),
+                Toggle::make('first_time_free')
+                    ->label('First visit of this type is free')
+                    ->default(false)
+                    ->helperText("If on, a customer's first event of this type is free."),
             ])
             ->columns(2);
     }

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Event;
 use App\Models\EventPromoCode;
 use App\Models\EventRegistration;
+use App\Models\EventRegistrationHistory;
 use App\Models\User;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -31,13 +32,16 @@ class EventRegistrationService
         }
 
         $promo = $this->resolvePromoCode($event, $promoCodeInput);
-        $isFirstEventFree = ! EventRegistration::query()
-            ->where('user_id', $user->id)
-            ->where('status', 'confirmed')
-            ->exists();
+        $isFirstTimeFree = (bool) $event->first_time_free
+            && $event->event_type_id !== null
+            && ! EventRegistrationHistory::query()
+                ->where('user_id', $user->id)
+                ->where('event_type_id', $event->event_type_id)
+                ->where('status', 'confirmed')
+                ->exists();
 
-        $isFree = $isFirstEventFree
-            || $promo !== null
+        $isFree = $isFirstTimeFree
+            || ($promo !== null && $promo->isFree())
             || (int) $event->price_cents < 100;
 
         if ($existing) {
@@ -55,7 +59,7 @@ class EventRegistrationService
             $registration->update([
                 'status' => 'confirmed',
                 'payment_status' => 'paid',
-                'used_first_event_free' => $isFirstEventFree,
+                'used_first_event_free' => $isFirstTimeFree,
                 'event_promo_code_id' => $promo?->id,
                 'registered_at' => now(),
             ]);
@@ -68,8 +72,8 @@ class EventRegistrationService
 
             return [
                 'status' => 'confirmed',
-                'message' => $isFirstEventFree
-                    ? 'Your first event is free. You are registered!'
+                'message' => $isFirstTimeFree
+                    ? 'Your first ' . ($event->eventType?->name ?? 'event') . ' event is free. You are registered!'
                     : ($promo ? 'Promo code applied. You are registered!' : 'You are registered!'),
                 'registration_id' => $registration->id,
             ];
@@ -79,13 +83,13 @@ class EventRegistrationService
             throw new RuntimeException('This event is not synced to Stripe yet. Please contact support.');
         }
 
-        $session = $this->checkout->createSession($registration, $event, $returnBaseUrl);
+        $session = $this->checkout->createSession($registration, $event, $returnBaseUrl, $promo);
 
         $registration->update([
             'status' => 'pending_payment',
             'payment_status' => 'pending',
             'stripe_checkout_session_id' => $session->id,
-            'event_promo_code_id' => null,
+            'event_promo_code_id' => $promo?->id,
             'used_first_event_free' => false,
         ]);
 

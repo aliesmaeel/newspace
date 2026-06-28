@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Models\EventRegistrationHistory;
 use App\Services\EventRegistrationService;
 use App\Services\StripeEventCheckoutService;
 use Illuminate\Http\JsonResponse;
@@ -53,10 +54,16 @@ class EventController extends Controller
                 'status' => $registration->status,
                 'payment_status' => $registration->payment_status,
             ] : null;
-            $payload['has_attended_before'] = EventRegistration::query()
-                ->where('user_id', $user->id)
-                ->where('status', 'confirmed')
-                ->exists();
+
+            $hasAttendedType = $event->event_type_id !== null
+                && EventRegistrationHistory::query()
+                    ->where('user_id', $user->id)
+                    ->where('event_type_id', $event->event_type_id)
+                    ->where('status', 'confirmed')
+                    ->exists();
+
+            $payload['has_attended_before'] = $hasAttendedType;
+            $payload['first_time_free_eligible'] = (bool) $event->first_time_free && ! $hasAttendedType;
         }
 
         return response()->json(['event' => $payload]);
