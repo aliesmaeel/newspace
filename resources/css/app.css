@@ -506,10 +506,6 @@ h2 {
 }
 
 .event-card-description {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 4;
-    overflow: hidden;
     margin-bottom: 0.85rem;
 }
 
