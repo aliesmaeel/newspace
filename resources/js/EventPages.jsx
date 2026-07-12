@@ -46,6 +46,12 @@ export function EventsPage({ Layout }) {
                                           })
                                         : ""}
                                 </p>
+                                {event.description ? (
+                                    <div
+                                        className="program-details event-card-description"
+                                        dangerouslySetInnerHTML={{ __html: event.description }}
+                                    />
+                                ) : null}
                                 <Link className="btn btn-dark" to={`/events/${event.slug}`}>
                                     View event
                                 </Link>

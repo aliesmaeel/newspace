@@ -566,7 +566,7 @@ function ProgramsPage() {
                                 }}
                             />
                             <div className="program-content">
-                                <p className="duration">{program.price_label || "Free"}</p>
+                                <p className="duration">{program.price_label || ""}</p>
                                 <h3>{program.title}</h3>
                                 <div
                                     className="program-details"
