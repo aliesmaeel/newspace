@@ -369,35 +369,41 @@ function HomePage() {
                 </div>
             </section>
             <section className="container section founder-section">
-                <div className="founder-photo" />
+                <div className="founder-photo" role="img" aria-label="Raouda Sakour" />
                 <article className="card founder-card">
-                    <p className="eyebrow">Our Founder: Raouda Sakour</p>
-                    <h3>Executive leadership with global perspective.</h3>
+                    <p className="eyebrow">Our Founder</p>
+                    <h3>Raouda Sakour</h3>
+                    <p className="founder-role">Founder, {BRAND_NAME}</p>
+                    <p className="founder-hook">Raouda doesn&apos;t just advise family businesses. She owns and leads one.</p>
                     <p>
-                        Raouda is a distinguished executive with 26+ years across sales, business development, consulting, and human
-                        capital development. Fluent in Arabic, English, and Mandarin, she has held leadership roles at Cognizant, Capgemini,
-                        Accenture, and Oracle Cloud Infrastructure.
+                        As an owner of a family property business, the questions her clients carry are questions she lives with too —
+                        how to grow what the family has built, how to be fair to both the business and the relationships behind it, and
+                        how to prepare what comes next without losing what matters most.
                     </p>
-                    <h4 className="founder-card-subhead">
-                        <a href="https://www.maxwellleadership.com/" target="_blank" rel="noopener noreferrer">
-                            Maxwell Leadership
-                        </a>
-                    </h4>
                     <p>
-                        Through the John Maxwell Leadership Certified Program, Raouda connects clients to Maxwell enterprise content—including
-                        the Maxwell Method of Speaking, Selling, Coaching, and Leadership. As a certified Coach, Speaker, and Leadership
-                        Game Facilitator, she helps leaders strengthen skills, navigate challenges, and lift team performance.
+                        She pairs that insider&apos;s understanding with an outsider&apos;s rigor: 26+ years inside some of the world&apos;s
+                        leading technology organizations — Oracle, Accenture, Capgemini, and Cognizant — leading digital and cloud
+                        transformation with C-level leaders across the Middle East, Europe, the UK, and Africa.
                     </p>
-                    <h4 className="founder-card-subhead">
-                        <a href="https://www.circleofexcellence.biz/" target="_blank" rel="noopener noreferrer">
-                            Circle of Excellence
-                        </a>
-                    </h4>
                     <p>
-                        Her work with Circle of Excellence reflects a drive to maximize human potential: a global community in 50+ countries
-                        offering entrepreneurs tools for prosperity, freedom, and purpose through education, technology, events, publications,
-                        coaching, and consulting.
+                        She completed the Cambridge Judge Business School Family Business Leadership Programme, and is a Certified John
+                        Maxwell Coach and DISC Consultant since 2020 — currently in Maxwell Leadership&apos;s Executive Director Program —
+                        as well as a Certified John Maxwell Youth Coach, a credential she carries into every next-generation engagement,
+                        because preparing young leaders is not a service line for her. It&apos;s her heart.
                     </p>
+                    <ul className="founder-credentials">
+                        <li>Family Business Owner</li>
+                        <li>Oracle · Accenture · Capgemini · Cognizant</li>
+                        <li>Cambridge Judge — Family Business Leadership</li>
+                        <li>Maxwell Coach · DISC Consultant · Youth Coach</li>
+                    </ul>
+                    <blockquote className="founder-quote">
+                        <p>
+                            A pilot is trained to see the whole landscape at once, to stay calm when visibility drops, and to always
+                            have a flight plan. I bring the same discipline to family enterprises — I call it leadership with altitude.
+                        </p>
+                        <footer>Raouda Sakour — Pilot in training, Edinburgh</footer>
+                    </blockquote>
                 </article>
             </section>
             <section className="container section">

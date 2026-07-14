@@ -788,33 +788,65 @@ h2 {
     background-repeat: no-repeat;
 }
 
+.founder-card h3 {
+    margin-bottom: 0.25rem;
+}
+
 .founder-card p {
     margin: 0 0 0.85rem;
     line-height: 1.65;
 }
 
-.founder-card p:last-of-type {
-    margin-bottom: 0;
+.founder-role {
+    margin: 0 0 1rem !important;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
 }
 
-.founder-card h4.founder-card-subhead {
-    margin: 1.1rem 0 0.45rem;
+.founder-hook {
+    color: var(--paper);
+    font-size: 1.05rem;
+    font-weight: 500;
+    line-height: 1.5 !important;
+}
+
+.founder-credentials {
+    display: grid;
+    gap: 0.45rem;
+    list-style: none;
+    margin: 1.15rem 0 1.25rem;
+    padding: 0.85rem 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+
+.founder-credentials li {
+    color: var(--text);
+    font-size: 0.84rem;
+    letter-spacing: 0.03em;
+    line-height: 1.4;
+}
+
+.founder-quote {
+    margin: 0;
+    padding: 0;
+}
+
+.founder-quote p {
+    color: var(--paper);
+    font-size: 1.02rem;
+    font-style: italic;
+    line-height: 1.6 !important;
+    margin-bottom: 0.65rem !important;
+}
+
+.founder-quote footer {
+    color: var(--text);
     font-size: 0.82rem;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: #d8bd74;
-}
-
-.founder-card h4.founder-card-subhead a {
-    color: inherit;
-    text-decoration: none;
-    border-bottom: 1px solid rgba(216, 189, 116, 0.45);
-}
-
-.founder-card h4.founder-card-subhead a:hover {
-    color: #f0e5c3;
-    border-bottom-color: rgba(240, 229, 195, 0.6);
+    font-style: normal;
+    letter-spacing: 0.03em;
 }
 
 .cta-card {
