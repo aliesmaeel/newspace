@@ -47,7 +47,7 @@ const fallbackPrograms = [
         image_url: "/assets/program-12-weeks.png",
         price_cents: 0,
         billing_interval_months: null,
-        price_label: "Free",
+        price_label: "",
     },
     {
         slug: "six-months",
@@ -566,7 +566,9 @@ function ProgramsPage() {
                                 }}
                             />
                             <div className="program-content">
-                                <p className="duration">{program.price_label || ""}</p>
+                                {program.price_label && program.price_label.toLowerCase() !== "free" ? (
+                                    <p className="duration">{program.price_label}</p>
+                                ) : null}
                                 <h3>{program.title}</h3>
                                 <div
                                     className="program-details"
