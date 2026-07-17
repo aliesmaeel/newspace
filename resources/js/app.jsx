@@ -9,7 +9,7 @@ import "./bootstrap";
 
 const navItems = [
     { label: "About", to: "/" },
-    { label: "Our Services", to: "/services" },
+    // Hidden for now: { label: "Our Services", to: "/services" },
     { label: "SAKOUR Mission", to: "/mission" },
     { label: "The Three Journeys", to: "/programs" },
     { label: "Events", to: "/events" },
@@ -1247,7 +1247,7 @@ function App() {
                 <RegistrationPopup />
                 <Routes>
                     <Route path="/" element={<HomePage />} />
-                    <Route path="/services" element={<ServicesPage />} />
+                    {/* Hidden for now: <Route path="/services" element={<ServicesPage />} /> */}
                     <Route path="/mission" element={<MissionPage />} />
                     <Route path="/programs" element={<ProgramsPage />} />
                     <Route path="/events" element={<EventsPage Layout={Layout} />} />
