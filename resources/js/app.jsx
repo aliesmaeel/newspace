@@ -10,8 +10,8 @@ import "./bootstrap";
 const navItems = [
     { label: "About", to: "/" },
     { label: "Our Services", to: "/services" },
-    { label: "Giving Back", to: { pathname: "/", hash: "#giving-back" } },
-    { label: "Our Programs", to: "/programs" },
+    { label: "SAKOUR Mission", to: { pathname: "/", hash: "#giving-back" } },
+    { label: "The Three Journeys", to: "/programs" },
     { label: "Events", to: "/events" },
     { label: "Booking", to: "/booking" },
     { label: "Contact", to: "/contact" },
@@ -207,7 +207,7 @@ function Layout({ children }) {
                                             const active = location.pathname === "/" && !location.hash;
                                             return `nav-link ${active ? "active" : ""}`;
                                         }
-                                        if (item.label === "Giving Back") {
+                                        if (item.label === "SAKOUR Mission") {
                                             const active =
                                                 location.pathname === "/" && location.hash === "#giving-back";
                                             return `nav-link ${active ? "active" : ""}`;
@@ -309,63 +309,149 @@ function HomePage() {
         <Layout>
             <section className="hero-wrap">
                 <div className="hero container">
-                    <p className="eyebrow">{BRAND_NAME}</p>
-                    <h1>Personal and professional growth converge here.</h1>
+                    <p className="eyebrow">SAKOUR Family Enterprise — Legacy, Leadership, Future Readiness</p>
+                    <h1>
+                        Legacy is
+                        <br />
+                        a Verb.
+                    </h1>
                     <p className="lead">
-                        Founded by Raouda Sakour, {BRAND_NAME} helps leaders, entrepreneurs, and family businesses unlock their next level
-                        through coaching, transformational programs, and strategic guidance.
+                        Three decades. Three continents. One mission: guiding family enterprises whose wealth means more than money —
+                        through leadership, succession, and the future they&apos;re building.
                     </p>
                     <div className="hero-actions">
-                        <Link className="btn btn-primary" to="/contact">
-                            Contact Us
+                        <Link className="btn btn-primary" to="/booking">
+                            Start a Legacy Conversation
                         </Link>
-                        <a className="btn btn-ghost" href="/programs">
-                            View Programs
-                        </a>
                     </div>
                 </div>
             </section>
             <section className="container section intro-section">
                 <p className="eyebrow">About {BRAND_NAME}</p>
-                <h2>Welcome to {BRAND_NAME}, where personal and professional growth converge.</h2>
+                <h2>
+                    Family business is one of the most powerful forms of enterprise in the world — and one of the most personal.
+                </h2>
                 <p className="lead">
-                    Founded by Raouda Sakour in August 2023, {BRAND_NAME} helps individuals and organizations unlock potential and reach
-                    new heights—through coaching, leadership development, and holistic growth. We guide you past barriers, clarify
-                    meaningful goals, and build the skills to succeed as your partners in progress, not just a service.
-                </p>
-                <p className="lead">
-                    Explore our services and programs, and step into a space where transformation begins.
+                    Behind every decision, there is a story.
+                    <br />
+                    Behind every transition, there is a family.
+                    <br />
+                    Behind every legacy, there is a next generation preparing to carry it forward.
                 </p>
             </section>
-            <section className="container section our-services-section">
-                <p className="eyebrow">Our Services</p>
-                <h2>Methodologies that move you forward</h2>
+            <section className="container section who-we-serve-section">
+                <p className="eyebrow">Who We Serve</p>
+                <h2>Founders, family business owners, and next-generation leaders.</h2>
                 <p className="lead">
-                    At {BRAND_NAME} we apply proven methodologies as catalysts for change—so individuals and organizations can adapt, solve
-                    what matters most with clarity and foresight, and thrive in a shifting landscape. We work with results in mind,
-                    walk with you to breakthrough, and help already-successful leaders reach the next level with new ways of thinking.
+                    At SAKOUR Family Enterprise, we work alongside founders, family business owners, and next-generation leaders as
+                    they navigate growth, governance, succession, leadership, and transformation — with clarity, not just complexity.
                 </p>
-                <div className="services-cards">
-                    {services.map((item) => (
-                        <article className="card" key={item.title}>
-                            <img src={item.image} alt={item.title} className="service-card-image" />
-                            <h3>{item.title}</h3>
-                            <p>{item.body}</p>
+
+                <div className="belief-block">
+                    <p className="eyebrow">Our Belief</p>
+                    <p className="lead">
+                        For us, family enterprise isn&apos;t only about wealth, ownership, or continuity. It&apos;s about legacy,
+                        responsibility, identity, and relationships — and the courage to prepare the next generation to lead well in
+                        the era of AI, while staying deeply connected to the values that hold the family together.
+                    </p>
+                </div>
+
+                <div className="transform-block">
+                    <p className="eyebrow">What We Help Families Do</p>
+                    <div className="transform-grid">
+                        <article className="card transform-card">
+                            <span className="transform-from">Complexity</span>
+                            <span className="transform-arrow" aria-hidden="true">&rarr;</span>
+                            <span className="transform-to">Clarity</span>
                         </article>
-                    ))}
+                        <article className="card transform-card">
+                            <span className="transform-from">Transition</span>
+                            <span className="transform-arrow" aria-hidden="true">&rarr;</span>
+                            <span className="transform-to">Alignment</span>
+                        </article>
+                        <article className="card transform-card">
+                            <span className="transform-from">Inherited Responsibility</span>
+                            <span className="transform-arrow" aria-hidden="true">&rarr;</span>
+                            <span className="transform-to">Intentional Leadership</span>
+                        </article>
+                    </div>
+                </div>
+
+                <div className="why-block">
+                    <p className="eyebrow">Why SAKOUR</p>
+                    <h3 className="why-tagline">Businesses don&apos;t grow until their leaders do.</h3>
+                    <p>
+                        Family enterprises rarely fail for lack of strategy. They fail when leadership, family alignment, and culture
+                        can&apos;t carry the strategy they already have. So our work begins where every plan will ultimately succeed or
+                        fail: with the leader — then moves outward to the family, the culture, and the enterprise.
+                    </p>
+                    <p>
+                        Most advisors bring one lens — legal, financial, or governance. SAKOUR was built differently: from decades
+                        inside the room where enterprise transformation actually happens, a rigorous formal grounding in family
+                        business governance and succession, a hands-on coaching practice — and the lived experience of a family
+                        business owner.
+                    </p>
+                    <p>
+                        We don&apos;t bring a single playbook. What works for a third-generation Gulf conglomerate rarely works the
+                        same way for a European family institution or an African family enterprise entering its next chapter. Real
+                        guidance has to be earned across cultures, not templated.
+                    </p>
+                </div>
+
+                <div className="regions-block">
+                    <p className="eyebrow">Where We Work</p>
+                    <p className="lead">
+                        One practice, four worlds — and the cross-border families who span them. Because guidance has to be earned in
+                        a culture, not imported into it.
+                    </p>
+                    <div className="regions-grid">
+                        <article className="card region-card">
+                            <h3>United Kingdom</h3>
+                            <p>
+                                Where SAKOUR is rooted — home of our UK retreats, the Edinburgh &amp; Glasgow Leadership Games, and our
+                                Cambridge-grounded practice.
+                            </p>
+                        </article>
+                        <article className="card region-card">
+                            <h3>Europe</h3>
+                            <p>
+                                Multi-generational family institutions navigating succession, professionalization, and a next
+                                generation that demands purpose.
+                            </p>
+                        </article>
+                        <article className="card region-card">
+                            <h3>Middle East</h3>
+                            <p>
+                                Three decades of C-level trust across the region — where family, faith, and enterprise have never been
+                                separate things.
+                            </p>
+                        </article>
+                        <article className="card region-card">
+                            <h3>Indonesia &amp; Southeast Asia</h3>
+                            <p>
+                                Home of our royal retreat, and a rising generation of family enterprises bridging tradition and
+                                transformation.
+                            </p>
+                        </article>
+                    </div>
                 </div>
             </section>
             <section className="impact-band" id="giving-back">
                 <div className="container impact-inner">
-                    <p className="eyebrow">Giving Back</p>
-                    <h2>Empowering Through Social Responsibility</h2>
+                    <p className="eyebrow">The SAKOUR Mission</p>
+                    <h2>One million futures.</h2>
                     <p>
-                        At {BRAND_NAME}, we believe in making a difference. That&apos;s why XX% of the net profit from our services goes
-                        toward educational initiatives that foster growth. By choosing {BRAND_NAME}, you become a part of this change.
+                        SAKOUR Family Enterprise exists for a purpose larger than itself. Raouda&apos;s lifetime mission is to fund the
+                        education of one million medical students around the world — young people with the calling to heal, and without
+                        the means to get there.
                     </p>
-                    <a className="btn btn-primary impact-band-cta" href="mailto:raouda@neospaceglobal.com">
-                        Get in touch
-                    </a>
+                    <p>
+                        It began in 2017, with her charitable foundation sponsoring medical students in Syria and supporting communities
+                        across Africa. A quarter of everything SAKOUR earns serves this mission — which means every family we work with
+                        becomes part of it. Every leader who grows, every succession that succeeds, every business that thrives sends
+                        another young person toward medicine.
+                    </p>
+                    <p className="impact-closing">When your family business grows, another family&apos;s future grows with it.</p>
                 </div>
             </section>
             <section className="container section founder-section">
@@ -498,7 +584,7 @@ function ServicesPage() {
 
                 <div className="services-programs-cta">
                     <Link className="btn btn-primary" to="/programs">
-                        Our Programs
+                        The Three Journeys
                     </Link>
                 </div>
 
@@ -554,13 +640,13 @@ function ProgramsPage() {
         <Layout>
             <section className="programs-hero">
                 <div className="container">
-                    <h1>Our Programs</h1>
+                    <h1>The Three Journeys</h1>
                 </div>
             </section>
             <section className="container section programs-intro">
                 <p className="lead">
-                    Explore our programs, join us in making a difference, and dive into a wealth of content that inspires, educates, and
-                    fuels your pursuit of greatness.
+                    Every engagement begins with The Legacy Conversation — a complimentary, private conversation. From there, three
+                    journeys — each one deeper than the last.
                 </p>
                 <div className="programs-stack">
                     {programs.map((program) => (

@@ -104,24 +104,29 @@ a {
 
 .brand {
     display: inline-flex;
+    flex-shrink: 0;
 }
 
 .brand img {
-    width: min(160px, 32vw);
-    height: auto;
+    width: auto;
+    height: clamp(56px, 9vw, 88px);
 }
 
 .nav {
     display: flex;
-    gap: 0.8rem;
+    align-items: center;
+    gap: 0.15rem;
     flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .nav-link {
     color: var(--text-soft);
-    padding: 0.45rem 0.8rem;
+    padding: 0.4rem 0.55rem;
     border-radius: 999px;
     transition: 0.2s ease;
+    font-size: 0.88rem;
+    white-space: nowrap;
 }
 
 .nav-link:hover,
@@ -743,6 +748,73 @@ h2 {
     border-bottom: 1px solid #2b271c;
 }
 
+.who-we-serve-section .belief-block,
+.who-we-serve-section .transform-block,
+.who-we-serve-section .why-block,
+.who-we-serve-section .regions-block {
+    margin-top: 2.5rem;
+}
+
+.transform-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-top: 1.25rem;
+}
+
+.transform-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    padding: 1.35rem 1.15rem;
+}
+
+.transform-from {
+    color: var(--text-soft);
+    font-size: 0.95rem;
+}
+
+.transform-arrow {
+    color: var(--primary);
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
+.transform-to {
+    color: var(--paper);
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+.why-block .why-tagline {
+    margin: 0.2rem 0 0.9rem;
+    font-size: 1.35rem;
+    color: var(--paper);
+}
+
+.why-block p {
+    max-width: 75ch;
+    line-height: 1.65;
+    margin: 0 0 0.85rem;
+}
+
+.regions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-top: 1.25rem;
+}
+
+.region-card h3 {
+    margin: 0 0 0.5rem;
+}
+
+.region-card p {
+    margin: 0;
+    line-height: 1.6;
+}
+
 #giving-back {
     scroll-margin-top: 92px;
 }
@@ -768,6 +840,19 @@ h2 {
 .impact-inner p {
     color: #f1e6c8;
     max-width: 60ch;
+}
+
+.impact-inner p {
+    margin: 0 0 0.9rem;
+    line-height: 1.65;
+}
+
+.impact-inner .impact-closing {
+    margin: 1.1rem 0 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    font-style: italic;
+    color: #fff;
 }
 
 .founder-section {
