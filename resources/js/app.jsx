@@ -10,7 +10,7 @@ import "./bootstrap";
 const navItems = [
     { label: "About", to: "/" },
     { label: "Our Services", to: "/services" },
-    { label: "SAKOUR Mission", to: { pathname: "/", hash: "#giving-back" } },
+    { label: "SAKOUR Mission", to: "/mission" },
     { label: "The Three Journeys", to: "/programs" },
     { label: "Events", to: "/events" },
     { label: "Booking", to: "/booking" },
@@ -207,11 +207,6 @@ function Layout({ children }) {
                                             const active = location.pathname === "/" && !location.hash;
                                             return `nav-link ${active ? "active" : ""}`;
                                         }
-                                        if (item.label === "SAKOUR Mission") {
-                                            const active =
-                                                location.pathname === "/" && location.hash === "#giving-back";
-                                            return `nav-link ${active ? "active" : ""}`;
-                                        }
                                         return `nav-link ${isActive ? "active" : ""}`;
                                     }}
                                 >
@@ -249,7 +244,7 @@ function Layout({ children }) {
             <footer className="footer">
                 <div className="container footer-inner">
                     <p>{BRAND_NAME}</p>
-                    <p>Copyright {BRAND_NAME} {new Date().getFullYear()}.</p>
+                    <p>Copyright {BRAND_NAME} 2024-2026.</p>
                 </div>
             </footer>
         </div>
@@ -263,16 +258,6 @@ function HomePage() {
     const paymentResult = query.get("payment");
     const [showHomePopup, setShowHomePopup] = useState(false);
     const [homePopupMessage, setHomePopupMessage] = useState("");
-
-    useEffect(() => {
-        if (location.hash !== "#giving-back") {
-            return;
-        }
-        const timer = window.setTimeout(() => {
-            document.getElementById("giving-back")?.scrollIntoView({ behavior: "smooth" });
-        }, 0);
-        return () => window.clearTimeout(timer);
-    }, [location.pathname, location.hash]);
 
     const verifiedResult = query.get("verified");
 
@@ -548,24 +533,6 @@ function HomePage() {
                     </div>
                 </div>
             </section>
-            <section className="impact-band" id="giving-back">
-                <div className="container impact-inner">
-                    <p className="eyebrow">The SAKOUR Mission</p>
-                    <h2>One million futures.</h2>
-                    <p>
-                        SAKOUR Family Enterprise exists for a purpose larger than itself. Raouda&apos;s lifetime mission is to fund the
-                        education of one million medical students around the world — young people with the calling to heal, and without
-                        the means to get there.
-                    </p>
-                    <p>
-                        It began in 2017, with her charitable foundation sponsoring medical students in Syria and supporting communities
-                        across Africa. A quarter of everything SAKOUR earns serves this mission — which means every family we work with
-                        becomes part of it. Every leader who grows, every succession that succeeds, every business that thrives sends
-                        another young person toward medicine.
-                    </p>
-                    <p className="impact-closing">When your family business grows, another family&apos;s future grows with it.</p>
-                </div>
-            </section>
             <section className="container section founder-section">
                 <div className="founder-photo" role="img" aria-label="Raouda Sakour" />
                 <article className="card founder-card">
@@ -625,6 +592,41 @@ function HomePage() {
                     </div>
                 </div>
             )}
+        </Layout>
+    );
+}
+
+function MissionPage() {
+    return (
+        <Layout>
+            <section className="impact-band mission-hero">
+                <div className="container impact-inner">
+                    <p className="eyebrow">The SAKOUR Mission</p>
+                    <h2>One million futures.</h2>
+                    <p>
+                        SAKOUR Family Enterprise exists for a purpose larger than itself. Raouda&apos;s lifetime mission is to fund the
+                        education of one million medical students around the world — young people with the calling to heal, and without
+                        the means to get there.
+                    </p>
+                    <p>
+                        It began in 2017, with her charitable foundation sponsoring medical students in Syria and supporting communities
+                        across Africa. A quarter of everything SAKOUR earns serves this mission — which means every family we work with
+                        becomes part of it. Every leader who grows, every succession that succeeds, every business that thrives sends
+                        another young person toward medicine.
+                    </p>
+                    <p className="impact-closing">When your family business grows, another family&apos;s future grows with it.</p>
+                </div>
+            </section>
+            <section className="container section">
+                <article className="card cta-card">
+                    <p className="eyebrow">Be Part of It</p>
+                    <h3>Every engagement moves the mission forward.</h3>
+                    <p>Start a conversation about your family enterprise — and become part of one million futures.</p>
+                    <Link className="btn btn-primary" to="/booking">
+                        Start a Legacy Conversation
+                    </Link>
+                </article>
+            </section>
         </Layout>
     );
 }
@@ -1246,6 +1248,7 @@ function App() {
                 <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/services" element={<ServicesPage />} />
+                    <Route path="/mission" element={<MissionPage />} />
                     <Route path="/programs" element={<ProgramsPage />} />
                     <Route path="/events" element={<EventsPage Layout={Layout} />} />
                     <Route path="/events/:slug" element={<EventDetailPage Layout={Layout} />} />
