@@ -347,12 +347,75 @@ function HomePage() {
                     they navigate growth, governance, succession, leadership, and transformation — with clarity, not just complexity.
                 </p>
 
+                <div className="audiences-block">
+                    <p className="eyebrow">Who We Work With</p>
+                    <div className="audiences-grid">
+                        <article className="card audience-card">
+                            <span className="section-number">01</span>
+                            <h3>Founders</h3>
+                            <p>
+                                You built something from nothing. Now you&apos;re thinking about what happens to it — and who it becomes
+                                — without you at the center of every decision.
+                            </p>
+                        </article>
+                        <article className="card audience-card">
+                            <span className="section-number">02</span>
+                            <h3>Family Business Owners</h3>
+                            <p>
+                                You&apos;re balancing the business, the family, and everything in between. You need clarity on
+                                governance, roles, and what &quot;fair&quot; actually means for the next chapter.
+                            </p>
+                        </article>
+                        <article className="card audience-card">
+                            <span className="section-number">03</span>
+                            <h3>Next-Generation Leaders</h3>
+                            <p>
+                                You&apos;re stepping into a legacy you didn&apos;t build, but are expected to carry. You want to lead in
+                                your own way — without losing what made the business work.
+                            </p>
+                        </article>
+                    </div>
+                </div>
+
                 <div className="belief-block">
                     <p className="eyebrow">Our Belief</p>
                     <p className="lead">
                         For us, family enterprise isn&apos;t only about wealth, ownership, or continuity. It&apos;s about legacy,
                         responsibility, identity, and relationships — and the courage to prepare the next generation to lead well in
                         the era of AI, while staying deeply connected to the values that hold the family together.
+                    </p>
+                </div>
+
+                <div className="why-now-block">
+                    <p className="eyebrow">Why It Matters Now</p>
+                    <h3>Enduring family enterprises prepare deliberately.</h3>
+                    <p>
+                        Global research on family enterprise makes one thing clear: the businesses that endure are the ones that prepare
+                        deliberately — and the next generation commits when it can see the business stands for something.
+                    </p>
+                    <div className="insights-grid">
+                        <article className="insight">
+                            <p>
+                                Fewer than half of family business leaders have a formal succession plan in place — yet those who do
+                                describe it as the single most important decision they ever made.
+                            </p>
+                        </article>
+                        <article className="insight">
+                            <p>
+                                The next generation engages when the business has visible purpose and social impact — purpose, not
+                                pressure, is what carries a legacy across generations.
+                            </p>
+                        </article>
+                        <article className="insight">
+                            <p>
+                                Legacy is the connective tissue between a family&apos;s values, its business purpose, and what it hopes
+                                to pass forward — a gift and a responsibility.
+                            </p>
+                        </article>
+                    </div>
+                    <p className="research-source">
+                        Source: KPMG International &amp; STEP Project Global Consortium — &quot;Empowering the Future of Family
+                        Business&quot; (Global Family Business Survey, 1,800+ businesses, 33 countries)
                     </p>
                 </div>
 
@@ -373,6 +436,55 @@ function HomePage() {
                             <span className="transform-from">Inherited Responsibility</span>
                             <span className="transform-arrow" aria-hidden="true">&rarr;</span>
                             <span className="transform-to">Intentional Leadership</span>
+                        </article>
+                    </div>
+                </div>
+
+                <div className="process-block">
+                    <p className="eyebrow">How We Work</p>
+                    <h3>A process built for how families actually change.</h3>
+                    <div className="process-grid">
+                        <article className="process-step">
+                            <span className="section-number">01</span>
+                            <div>
+                                <p className="process-label">Listen</p>
+                                <h4>Understand the story</h4>
+                                <p>
+                                    Not just the business&apos;s numbers, but the relationships, history, and unspoken expectations
+                                    behind them.
+                                </p>
+                            </div>
+                        </article>
+                        <article className="process-step">
+                            <span className="section-number">02</span>
+                            <div>
+                                <p className="process-label">Clarify</p>
+                                <h4>Name what&apos;s real</h4>
+                                <p>
+                                    Where alignment exists, where it doesn&apos;t, and what needs deciding before it becomes a crisis.
+                                </p>
+                            </div>
+                        </article>
+                        <article className="process-step">
+                            <span className="section-number">03</span>
+                            <div>
+                                <p className="process-label">Guide</p>
+                                <h4>Work alongside you</h4>
+                                <p>
+                                    Governance design, succession planning, and leadership development — at a pace your family can
+                                    sustain.
+                                </p>
+                            </div>
+                        </article>
+                        <article className="process-step">
+                            <span className="section-number">04</span>
+                            <div>
+                                <p className="process-label">Sustain</p>
+                                <h4>Stay engaged</h4>
+                                <p>
+                                    Legacy isn&apos;t a one-time decision. We stay with you as your family and business evolve.
+                                </p>
+                            </div>
                         </article>
                     </div>
                 </div>

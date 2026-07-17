@@ -400,14 +400,18 @@ h2 {
 }
 
 .programs-stack {
-    max-width: min(920px, 96vw);
+    max-width: 100%;
     margin: 0 auto;
     display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1rem;
+    align-items: stretch;
 }
 
 .program-card {
     position: relative;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
     background: linear-gradient(180deg, #fbfaf6 0%, #f3efe3 100%);
     color:var(--text-soft);
@@ -442,7 +446,8 @@ h2 {
 }
 
 .program-image {
-    height: 400px;
+    height: 220px;
+    flex-shrink: 0;
     margin: 0;
     background-size: cover;
     background-position: center;
@@ -450,9 +455,16 @@ h2 {
 }
 
 .program-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
     padding: 1.2rem 1.25rem 1.35rem;
     background: linear-gradient(160deg,#1e1b16f2,#12110ef2);
     text-align: left;
+}
+
+.program-details {
+    flex: 1;
 }
 
 .program-card .duration {
@@ -748,11 +760,84 @@ h2 {
     border-bottom: 1px solid #2b271c;
 }
 
+.who-we-serve-section .audiences-block,
 .who-we-serve-section .belief-block,
+.who-we-serve-section .why-now-block,
 .who-we-serve-section .transform-block,
+.who-we-serve-section .process-block,
 .who-we-serve-section .why-block,
 .who-we-serve-section .regions-block {
     margin-top: 2.5rem;
+}
+
+.audiences-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-top: 1.25rem;
+}
+
+.audience-card {
+    position: relative;
+    padding-top: 2.8rem;
+}
+
+.section-number {
+    color: var(--primary);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+}
+
+.audience-card .section-number {
+    position: absolute;
+    top: 1.15rem;
+}
+
+.audience-card h3 {
+    margin: 0 0 0.55rem;
+}
+
+.audience-card p {
+    margin: 0;
+    line-height: 1.6;
+}
+
+.why-now-block > h3,
+.process-block > h3 {
+    margin: 0.2rem 0 0.9rem;
+    color: var(--paper);
+    font-size: 1.35rem;
+}
+
+.why-now-block > p {
+    max-width: 75ch;
+    line-height: 1.65;
+}
+
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-top: 1.25rem;
+}
+
+.insight {
+    border-left: 2px solid var(--primary);
+    padding: 0.1rem 0 0.1rem 1rem;
+}
+
+.insight p {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.6;
+}
+
+.why-now-block .research-source {
+    margin-top: 1.25rem;
+    color: #948b77;
+    font-size: 0.78rem;
+    line-height: 1.5;
 }
 
 .transform-grid {
@@ -787,6 +872,51 @@ h2 {
     font-weight: 600;
 }
 
+.process-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    margin-top: 1.25rem;
+    border-top: 1px solid var(--line);
+}
+
+.process-step {
+    display: grid;
+    grid-template-columns: 2.25rem 1fr;
+    gap: 0.75rem;
+    padding: 1.35rem 1.25rem 1.35rem 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.process-step:nth-child(odd) {
+    border-right: 1px solid var(--line);
+}
+
+.process-step:nth-child(even) {
+    padding-left: 1.25rem;
+}
+
+.process-label {
+    margin: 0 0 0.2rem;
+    color: var(--primary);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.process-step h4 {
+    margin: 0 0 0.45rem;
+    color: var(--paper);
+    font-size: 1.05rem;
+}
+
+.process-step div > p:last-child {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.6;
+}
+
 .why-block .why-tagline {
     margin: 0.2rem 0 0.9rem;
     font-size: 1.35rem;
@@ -813,6 +943,18 @@ h2 {
 .region-card p {
     margin: 0;
     line-height: 1.6;
+}
+
+@media (max-width: 700px) {
+    .process-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .process-step,
+    .process-step:nth-child(even) {
+        padding: 1.15rem 0;
+        border-right: 0;
+    }
 }
 
 #giving-back {
@@ -972,8 +1114,13 @@ h2 {
         display: none;
     }
 
+    .programs-stack {
+        grid-template-columns: 1fr;
+        max-width: 620px;
+    }
+
     .program-image {
-        height: 160px;
+        height: 240px;
     }
 
     .booking-layout {
