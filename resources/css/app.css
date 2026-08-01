@@ -1011,11 +1011,9 @@ h2 {
     border-radius: 18px;
     border: 1px solid var(--line);
     min-height: 320px;
-    background:
-        linear-gradient(rgba(17, 16, 13, 0.2), rgba(17, 16, 13, 0.12)),
-        url("/assets/raouda.jpg");
+    background-color: #1a1814;
     background-size: cover;
-    background-position-y: 0;
+    background-position: center top;
     background-repeat: no-repeat;
 }
 

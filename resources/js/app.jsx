@@ -4,7 +4,7 @@ import { BrowserRouter, Link, NavLink, Route, Routes, useLocation } from "react-
 import { AuthProvider, useAuth } from "./AuthContext";
 import { LoginPage, RegisterPage, RegistrationPopup } from "./AuthPages";
 import { EventsPage, EventDetailPage } from "./EventPages";
-import { BRAND_LOGO, BRAND_NAME } from "./brand";
+import { BRAND_LOGO, BRAND_NAME, FOUNDER_PHOTO } from "./brand";
 import "./bootstrap";
 
 const navItems = [
@@ -534,7 +534,12 @@ function HomePage() {
                 </div>
             </section>
             <section className="container section founder-section">
-                <div className="founder-photo" role="img" aria-label="Raouda Sakour" />
+                <div
+                    className="founder-photo"
+                    role="img"
+                    aria-label="Raouda Sakour"
+                    style={{ backgroundImage: `linear-gradient(rgba(17, 16, 13, 0.2), rgba(17, 16, 13, 0.12)), url("${FOUNDER_PHOTO}")` }}
+                />
                 <article className="card founder-card">
                     <p className="eyebrow">Our Founder</p>
                     <h3>Raouda Sakour</h3>

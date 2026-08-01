@@ -72,6 +72,13 @@ class IntegrationSettingsService
         return self::resolvePublicAssetUrl($path, '/assets/neospace-logo.png');
     }
 
+    public function founderPhotoUrl(): string
+    {
+        $path = trim((string) ($this->get()->founder_photo_path ?? ''));
+
+        return self::resolvePublicAssetUrl($path, '/assets/raouda.jpeg');
+    }
+
     public static function resolvePublicAssetUrl(string $path, string $fallback): string
     {
         $path = trim($path);

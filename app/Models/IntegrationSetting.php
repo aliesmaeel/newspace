@@ -20,6 +20,7 @@ class IntegrationSetting extends Model
         'stripe_webhook_secret',
         'zoom_meeting_url',
         'logo_path',
+        'founder_photo_path',
     ];
 
     protected $casts = [

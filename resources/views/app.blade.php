@@ -7,7 +7,9 @@
     <script>
         window.__APP_BRAND__ = @json(config('brand.name'));
         window.__APP_LOGO__ = @json(app(\App\Services\IntegrationSettingsService::class)->logoUrl());
+        window.__FOUNDER_PHOTO__ = @json(app(\App\Services\IntegrationSettingsService::class)->founderPhotoUrl());
     </script>
+    @viteReactRefresh
     @vite(['resources/css/app.css', 'resources/js/app.jsx'])
 </head>
 <body>

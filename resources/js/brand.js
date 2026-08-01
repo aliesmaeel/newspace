@@ -3,3 +3,6 @@ export const BRAND_NAME =
 
 export const BRAND_LOGO =
     (typeof window !== "undefined" && window.__APP_LOGO__) || "/assets/neospace-logo.png";
+
+export const FOUNDER_PHOTO =
+    (typeof window !== "undefined" && window.__FOUNDER_PHOTO__) || "/assets/raouda.jpeg";

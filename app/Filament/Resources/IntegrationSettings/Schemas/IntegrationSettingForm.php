@@ -14,7 +14,7 @@ class IntegrationSettingForm
         return $schema
             ->components([
                 Section::make('Branding')
-                    ->description('Logo shown in the website header and admin dashboard.')
+                    ->description('Logo and founder photo shown on the public website.')
                     ->schema([
                         FileUpload::make('logo_path')
                             ->label('Site logo')
@@ -26,6 +26,23 @@ class IntegrationSettingForm
                             ->openable()
                             ->downloadable()
                             ->helperText('Recommended: PNG or SVG with transparent background. Leave empty to use the default logo.'),
+                        FileUpload::make('founder_photo_path')
+                            ->label('Founder photo')
+                            ->disk('public')
+                            ->directory('branding')
+                            ->visibility('public')
+                            ->image()
+                            ->imageEditor()
+                            ->imageEditorAspectRatioOptions([
+                                null,
+                                '1:1',
+                                '3:4',
+                                '4:5',
+                            ])
+                            ->imageAspectRatio('3:4')
+                            ->openable()
+                            ->downloadable()
+                            ->helperText('Shown on the About page founder section. Use the editor to crop before saving. Leave empty to use the default photo.'),
                     ])
                     ->columns(1)
                     ->columnSpanFull(),
