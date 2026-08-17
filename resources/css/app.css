@@ -463,10 +463,6 @@ h2 {
     text-align: left;
 }
 
-.program-details {
-    flex: 1;
-}
-
 .program-card .duration {
     display: inline-block;
     margin: 0 0 0.65rem;
@@ -524,6 +520,10 @@ h2 {
 
 .event-card-description {
     margin-bottom: 0.85rem;
+}
+
+.program-content > .btn {
+    margin-top: auto;
 }
 
 .program-card .btn-dark {
