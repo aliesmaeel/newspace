@@ -207,9 +207,13 @@ export function EventDetailPage({ Layout }) {
                                 <Link to={`/login?redirect=/events/${slug}`}>log in</Link> to attend.
                             </p>
                         )}
-                        {user && !event.has_attended_before && (
-                            <p className="lead">Your first event registration is free.</p>
-                        )}
+                        {event.first_time_free_eligible ||
+                        (Number(event.price_cents) < 100 && !event.has_attended_before) ? (
+                            <p className="lead">
+                                Experience the {event.event_type_name || "Leadership Game"} for the first
+                                time, with our compliments
+                            </p>
+                        ) : null}
                         <div className="booking-form" style={{ maxWidth: "28rem", marginTop: "1rem" }}>
                             <input
                                 type="text"

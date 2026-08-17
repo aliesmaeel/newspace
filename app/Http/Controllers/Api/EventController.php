@@ -29,6 +29,7 @@ class EventController extends Controller
     public function show(string $slug): JsonResponse
     {
         $event = Event::query()
+            ->with('eventType')
             ->where('slug', $slug)
             ->where('is_active', true)
             ->firstOrFail();
@@ -48,6 +49,8 @@ class EventController extends Controller
         }
 
         $payload = $this->eventPayload($event, true, $registration);
+        $payload['first_time_free'] = (bool) $event->first_time_free;
+        $payload['event_type_name'] = $event->eventType?->name;
 
         if ($user) {
             $payload['user_registration'] = $registration ? [
@@ -64,6 +67,9 @@ class EventController extends Controller
 
             $payload['has_attended_before'] = $hasAttendedType;
             $payload['first_time_free_eligible'] = (bool) $event->first_time_free && ! $hasAttendedType;
+        } else {
+            // Guests cannot be checked against history; advertise the offer when the toggle is on.
+            $payload['first_time_free_eligible'] = (bool) $event->first_time_free;
         }
 
         return response()->json(['event' => $payload]);
