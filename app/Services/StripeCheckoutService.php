@@ -44,11 +44,12 @@ class StripeCheckoutService
         Stripe::setApiKey($secretKey);
 
         $appUrl = rtrim((string) ($returnBaseUrl ?: config('app.url')), '/');
+        $planKey = urlencode((string) $appointment->program_plan_key);
 
         return Session::create([
             'mode' => 'subscription',
-            'success_url' => "{$appUrl}/?payment=success",
-            'cancel_url' => "{$appUrl}/?payment=cancelled",
+            'success_url' => "{$appUrl}/booking?payment=success&plan={$planKey}",
+            'cancel_url' => "{$appUrl}/booking?payment=cancelled&plan={$planKey}",
             'customer_email' => $appointment->email,
             'line_items' => [[
                 'quantity' => 1,

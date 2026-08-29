@@ -22,6 +22,10 @@ class EventsTable
                 TextColumn::make('starts_at')->dateTime('M j, Y g:i A')->sortable(),
                 TextColumn::make('location_type')->badge(),
                 TextColumn::make('price_cents')->label('Price')->formatStateUsing(fn ($state, $record) => $record->formattedPriceLabel()),
+                TextColumn::make('attendees_count')
+                    ->label('Attendees')
+                    ->counts('attendees')
+                    ->sortable(),
                 IconColumn::make('stripe_price_id')->label('Stripe')->boolean()->getStateUsing(fn ($record) => filled($record->stripe_price_id)),
                 IconColumn::make('is_active')->boolean(),
             ])

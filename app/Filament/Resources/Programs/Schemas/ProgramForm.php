@@ -23,11 +23,8 @@ class ProgramForm
                     ->required()
                     ->maxLength(255)
                     ->live(onBlur: true)
-                    ->afterStateUpdated(function ($state, callable $set, callable $get): void {
-                        $slug = (string) $get('slug');
-                        if ($slug === '') {
-                            $set('slug', Str::slug((string) $state));
-                        }
+                    ->afterStateUpdated(function ($state, callable $set): void {
+                        $set('slug', Str::slug((string) $state));
                     }),
                 TextInput::make('slug')
                     ->required()

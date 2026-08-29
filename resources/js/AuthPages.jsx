@@ -117,6 +117,10 @@ export function RegisterPage({ Layout }) {
             const msg = data?.message || "Welcome! Please check your email to verify your account.";
             setForm(emptyForm);
             setSuccess(data?.email_sent === false ? `${msg} You can use “Resend verification email” after signing in.` : msg);
+            const url = new URL(window.location.href);
+            url.searchParams.delete("payment");
+            url.searchParams.delete("session_id");
+            window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
         } catch (err) {
             setError(err.message);
         }
@@ -251,6 +255,10 @@ export function RegistrationPopup() {
             });
             setSuccess(true);
             setError("");
+            const url = new URL(window.location.href);
+            url.searchParams.delete("payment");
+            url.searchParams.delete("session_id");
+            window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
             window.setTimeout(() => {
                 dismiss();
             }, 5000);
@@ -259,7 +267,7 @@ export function RegistrationPopup() {
         }
     }
 
-    if (!visible || (user && !success)) {
+    if (!visible && !success) {
         return null;
     }
 

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Events;
 use App\Filament\Resources\Events\Pages\CreateEvent;
 use App\Filament\Resources\Events\Pages\EditEvent;
 use App\Filament\Resources\Events\Pages\ListEvents;
+use App\Filament\Resources\Events\RelationManagers\AttendeesRelationManager;
 use App\Filament\Resources\Events\RelationManagers\PromoCodesRelationManager;
 use App\Filament\Resources\Events\Schemas\EventForm;
 use App\Filament\Resources\Events\Tables\EventsTable;
@@ -22,9 +23,9 @@ class EventResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::Calendar;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Booking';
+    protected static string|UnitEnum|null $navigationGroup = 'Events';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {
@@ -39,6 +40,7 @@ class EventResource extends Resource
     public static function getRelations(): array
     {
         return [
+            AttendeesRelationManager::class,
             PromoCodesRelationManager::class,
         ];
     }

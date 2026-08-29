@@ -27,9 +27,9 @@ class EventTypeResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::Tag;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Booking';
+    protected static string|UnitEnum|null $navigationGroup = 'Events';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 3;
 
     public static function form(Schema $schema): Schema
     {

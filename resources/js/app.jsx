@@ -4,6 +4,7 @@ import { BrowserRouter, Link, NavLink, Route, Routes, useLocation } from "react-
 import { AuthProvider, useAuth } from "./AuthContext";
 import { LoginPage, RegisterPage, RegistrationPopup } from "./AuthPages";
 import { EventsPage, EventDetailPage } from "./EventPages";
+import { apiFetch } from "./apiClient";
 import { BRAND_LOGO, BRAND_NAME, FOUNDER_PHOTO } from "./brand";
 import "./bootstrap";
 
@@ -69,26 +70,91 @@ const fallbackPrograms = [
     },
 ];
 
-function ContactInquiryForm() {
-    const [formData, setFormData] = useState({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
+function contactFormDefaults(user) {
+    if (!user) {
+        return {
+            firstName: "",
+            lastName: "",
+            email: "",
+            phone: "",
+            subject: "",
+            question: "",
+        };
+    }
+
+    const nameParts = String(user.name || "").trim().split(/\s+/);
+
+    return {
+        firstName: nameParts[0] || "",
+        lastName: nameParts.slice(1).join(" ") || "",
+        email: user.email || "",
+        phone: user.phone || "",
         subject: "",
         question: "",
-    });
+    };
+}
+
+function ContactInquiryForm() {
+    const { user } = useAuth();
+    const [formData, setFormData] = useState(() => contactFormDefaults(user));
     const [submitted, setSubmitted] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        if (!user) {
+            return;
+        }
+
+        const defaults = contactFormDefaults(user);
+        setFormData((prev) => ({
+            ...prev,
+            firstName: defaults.firstName,
+            lastName: defaults.lastName,
+            email: defaults.email,
+            phone: defaults.phone,
+        }));
+    }, [user]);
 
     function updateField(field, value) {
         setFormData((prev) => ({ ...prev, [field]: value }));
         setSubmitted(false);
+        setError("");
     }
 
-    function handleSubmit(event) {
+    async function handleSubmit(event) {
         event.preventDefault();
-        setSubmitted(true);
+        setSubmitting(true);
+        setError("");
+        setSubmitted(false);
+
+        try {
+            const { response, data } = await apiFetch("/api/contact-inquiries", {
+                method: "POST",
+                body: JSON.stringify({
+                    first_name: formData.firstName,
+                    last_name: formData.lastName,
+                    email: formData.email,
+                    phone: formData.phone,
+                    subject: formData.subject,
+                    question: formData.question,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(data?.message || "Could not send your message. Please try again.");
+            }
+
+            setSubmitted(true);
+            setFormData(contactFormDefaults(user));
+        } catch (submitError) {
+            setError(submitError.message || "Could not send your message. Please try again.");
+        } finally {
+            setSubmitting(false);
+        }
     }
+
+    const isLoggedIn = Boolean(user);
 
     return (
         <form className="booking-form" onSubmit={handleSubmit}>
@@ -98,6 +164,7 @@ function ContactInquiryForm() {
                     placeholder="First name"
                     value={formData.firstName}
                     onChange={(e) => updateField("firstName", e.target.value)}
+                    readOnly={isLoggedIn}
                     required
                 />
                 <input
@@ -105,6 +172,7 @@ function ContactInquiryForm() {
                     placeholder="Last name"
                     value={formData.lastName}
                     onChange={(e) => updateField("lastName", e.target.value)}
+                    readOnly={isLoggedIn}
                     required
                 />
             </div>
@@ -113,6 +181,7 @@ function ContactInquiryForm() {
                 placeholder="Email"
                 value={formData.email}
                 onChange={(e) => updateField("email", e.target.value)}
+                readOnly={isLoggedIn}
                 required
             />
             <input
@@ -120,6 +189,7 @@ function ContactInquiryForm() {
                 placeholder="Phone"
                 value={formData.phone}
                 onChange={(e) => updateField("phone", e.target.value)}
+                readOnly={isLoggedIn}
                 required
             />
             <input
@@ -136,9 +206,10 @@ function ContactInquiryForm() {
                 onChange={(e) => updateField("question", e.target.value)}
                 required
             />
+            {error && <p className="booking-error">{error}</p>}
             {submitted && <p className="booking-success">Thank you. Your message has been received.</p>}
-            <button type="submit" className="btn btn-primary cursor-pointer">
-                Submit
+            <button type="submit" className="btn btn-primary cursor-pointer" disabled={submitting}>
+                {submitting ? "Sending…" : "Submit"}
             </button>
         </form>
     );
@@ -183,9 +254,65 @@ function EmailVerificationNotice() {
     );
 }
 
+function CookieNotice({ noticeText }) {
+    const [visible, setVisible] = useState(false);
+
+    useEffect(() => {
+        try {
+            setVisible(localStorage.getItem("cookie_notice_ack") !== "1");
+        } catch {
+            setVisible(true);
+        }
+    }, []);
+
+    function acknowledge() {
+        try {
+            localStorage.setItem("cookie_notice_ack", "1");
+        } catch {
+            // ignore storage errors
+        }
+        setVisible(false);
+    }
+
+    if (!visible || !noticeText) {
+        return null;
+    }
+
+    return (
+        <div className="cookie-notice" role="region" aria-label="Cookie notice">
+            <div className="container cookie-notice-inner">
+                <p className="cookie-notice-text">
+                    {noticeText}{" "}
+                    <Link className="cookie-notice-link" to="/cookies">Cookie policy</Link>
+                    {" · "}
+                    <Link className="cookie-notice-link" to="/privacy">Privacy policy</Link>
+                </p>
+                <button type="button" className="btn btn-dark cookie-notice-btn" onClick={acknowledge}>
+                    OK
+                </button>
+            </div>
+        </div>
+    );
+}
+
 function Layout({ children }) {
     const location = useLocation();
     const { user, logout } = useAuth();
+    const [legalContent, setLegalContent] = useState(null);
+
+    useEffect(() => {
+        async function loadLegalContent() {
+            try {
+                const response = await fetch("/api/legal-content");
+                const data = await response.json();
+                setLegalContent(data.content ?? null);
+            } catch {
+                setLegalContent(null);
+            }
+        }
+
+        loadLegalContent();
+    }, []);
 
     return (
         <div className="page">
@@ -241,13 +368,52 @@ function Layout({ children }) {
                 </div>
             </header>
             <main>{children}</main>
+            <CookieNotice noticeText={legalContent?.cookie_notice_text} />
             <footer className="footer">
                 <div className="container footer-inner">
                     <p>{BRAND_NAME}</p>
+                    <p className="footer-links">
+                        <Link to="/privacy">Privacy policy</Link>
+                        <span aria-hidden="true"> · </span>
+                        <Link to="/cookies">Cookies</Link>
+                    </p>
                     <p>Copyright {BRAND_NAME} 2024-2026.</p>
                 </div>
             </footer>
         </div>
+    );
+}
+
+function MultilineText({ text }) {
+    if (!text) {
+        return null;
+    }
+
+    const lines = String(text).split("\n").filter((line) => line.trim() !== "");
+
+    return lines.map((line, index) => (
+        <React.Fragment key={index}>
+            {line}
+            {index < lines.length - 1 ? <br /> : null}
+        </React.Fragment>
+    ));
+}
+
+function PageLink({ to, className, children }) {
+    const href = to || "/";
+
+    if (href.startsWith("http://") || href.startsWith("https://")) {
+        return (
+            <a className={className} href={href} target="_blank" rel="noopener noreferrer">
+                {children}
+            </a>
+        );
+    }
+
+    return (
+        <Link className={className} to={href}>
+            {children}
+        </Link>
     );
 }
 
@@ -258,14 +424,26 @@ function HomePage() {
     const paymentResult = query.get("payment");
     const [showHomePopup, setShowHomePopup] = useState(false);
     const [homePopupMessage, setHomePopupMessage] = useState("");
+    const [content, setContent] = useState(null);
 
     const verifiedResult = query.get("verified");
 
     useEffect(() => {
-        if (paymentResult === "success") {
-            setHomePopupMessage("Payment received. Your appointment is confirmed.");
-            setShowHomePopup(true);
-        } else if (paymentResult === "cancelled") {
+        async function loadContent() {
+            try {
+                const response = await fetch("/api/page-content");
+                const data = await response.json();
+                setContent(data.content ?? null);
+            } catch {
+                setContent(null);
+            }
+        }
+
+        loadContent();
+    }, []);
+
+    useEffect(() => {
+        if (paymentResult === "cancelled") {
             setHomePopupMessage("Payment was cancelled. Please book again when ready.");
             setShowHomePopup(true);
         } else if (verifiedResult === "1") {
@@ -290,246 +468,133 @@ function HomePage() {
         window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
     }
 
+    if (!content) {
+        return (
+            <Layout>
+                <section className="container section">
+                    <p className="lead">Loading…</p>
+                </section>
+            </Layout>
+        );
+    }
+
     return (
         <Layout>
-            <section className="hero-wrap">
+            <section
+                className="hero-wrap"
+                style={{
+                    backgroundImage: `linear-gradient(rgba(12, 11, 10, 0.62), rgba(12, 11, 10, 0.72)), url("${content.hero_banner_url}")`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat",
+                }}
+            >
                 <div className="hero container">
-                    <p className="eyebrow">SAKOUR Family Enterprise — Legacy, Leadership, Future Readiness</p>
+                    <p className="eyebrow">{content.hero_eyebrow}</p>
                     <h1>
-                        Legacy is
+                        {content.hero_title_line_1}
                         <br />
-                        a Verb.
+                        {content.hero_title_line_2}
                     </h1>
-                    <p className="lead">
-                        Three decades. Three continents. One mission: guiding family enterprises whose wealth means more than money —
-                        through leadership, succession, and the future they&apos;re building.
-                    </p>
+                    <p className="lead">{content.hero_lead}</p>
                     <div className="hero-actions">
-                        <Link className="btn btn-primary" to="/booking">
-                            Start a Legacy Conversation
-                        </Link>
+                        <PageLink className="btn btn-primary" to={content.hero_cta_link}>
+                            {content.hero_cta_text}
+                        </PageLink>
                     </div>
                 </div>
             </section>
             <section className="container section intro-section">
-                <p className="eyebrow">About {BRAND_NAME}</p>
-                <h2>
-                    Family business is one of the most powerful forms of enterprise in the world — and one of the most personal.
-                </h2>
+                <p className="eyebrow">{content.about_eyebrow}</p>
+                <h2>{content.about_heading}</h2>
                 <p className="lead">
-                    Behind every decision, there is a story.
-                    <br />
-                    Behind every transition, there is a family.
-                    <br />
-                    Behind every legacy, there is a next generation preparing to carry it forward.
+                    <MultilineText text={content.about_lead} />
                 </p>
             </section>
             <section className="container section who-we-serve-section">
-                <p className="eyebrow">Who We Serve</p>
-                <h2>Founders, family business owners, and next-generation leaders.</h2>
-                <p className="lead">
-                    At SAKOUR Family Enterprise, we work alongside founders, family business owners, and next-generation leaders as
-                    they navigate growth, governance, succession, leadership, and transformation — with clarity, not just complexity.
-                </p>
+                <p className="eyebrow">{content.who_eyebrow}</p>
+                <h2>{content.who_heading}</h2>
+                <p className="lead">{content.who_lead}</p>
 
                 <div className="audiences-block">
                     <p className="eyebrow">Who We Work With</p>
                     <div className="audiences-grid">
-                        <article className="card audience-card">
-                            <span className="section-number">01</span>
-                            <h3>Founders</h3>
-                            <p>
-                                You built something from nothing. Now you&apos;re thinking about what happens to it — and who it becomes
-                                — without you at the center of every decision.
-                            </p>
-                        </article>
-                        <article className="card audience-card">
-                            <span className="section-number">02</span>
-                            <h3>Family Business Owners</h3>
-                            <p>
-                                You&apos;re balancing the business, the family, and everything in between. You need clarity on
-                                governance, roles, and what &quot;fair&quot; actually means for the next chapter.
-                            </p>
-                        </article>
-                        <article className="card audience-card">
-                            <span className="section-number">03</span>
-                            <h3>Next-Generation Leaders</h3>
-                            <p>
-                                You&apos;re stepping into a legacy you didn&apos;t build, but are expected to carry. You want to lead in
-                                your own way — without losing what made the business work.
-                            </p>
-                        </article>
+                        {(content.audiences || []).map((audience, index) => (
+                            <article className="card audience-card" key={audience.title || index}>
+                                <span className="section-number">{String(index + 1).padStart(2, "0")}</span>
+                                <h3>{audience.title}</h3>
+                                <p>{audience.body}</p>
+                            </article>
+                        ))}
                     </div>
                 </div>
 
                 <div className="belief-block">
-                    <p className="eyebrow">Our Belief</p>
-                    <p className="lead">
-                        For us, family enterprise isn&apos;t only about wealth, ownership, or continuity. It&apos;s about legacy,
-                        responsibility, identity, and relationships — and the courage to prepare the next generation to lead well in
-                        the era of AI, while staying deeply connected to the values that hold the family together.
-                    </p>
+                    <p className="eyebrow">{content.belief_eyebrow}</p>
+                    <p className="lead">{content.belief_lead}</p>
                 </div>
 
                 <div className="why-now-block">
-                    <p className="eyebrow">Why It Matters Now</p>
-                    <h3>Enduring family enterprises prepare deliberately.</h3>
-                    <p>
-                        Global research on family enterprise makes one thing clear: the businesses that endure are the ones that prepare
-                        deliberately — and the next generation commits when it can see the business stands for something.
-                    </p>
+                    <p className="eyebrow">{content.why_now_eyebrow}</p>
+                    <h3>{content.why_now_heading}</h3>
                     <div className="insights-grid">
-                        <article className="insight">
-                            <p>
-                                Fewer than half of family business leaders have a formal succession plan in place — yet those who do
-                                describe it as the single most important decision they ever made.
-                            </p>
-                        </article>
-                        <article className="insight">
-                            <p>
-                                The next generation engages when the business has visible purpose and social impact — purpose, not
-                                pressure, is what carries a legacy across generations.
-                            </p>
-                        </article>
-                        <article className="insight">
-                            <p>
-                                Legacy is the connective tissue between a family&apos;s values, its business purpose, and what it hopes
-                                to pass forward — a gift and a responsibility.
-                            </p>
-                        </article>
+                        {(content.why_now_insights || []).map((insight, index) => (
+                            <article className="insight" key={index}>
+                                <p>{insight.text}</p>
+                            </article>
+                        ))}
                     </div>
-                    <p className="research-source">
-                        Source: KPMG International &amp; STEP Project Global Consortium — &quot;Empowering the Future of Family
-                        Business&quot; (Global Family Business Survey, 1,800+ businesses, 33 countries)
-                    </p>
+                    <p className="research-source">{content.why_now_source}</p>
                 </div>
 
                 <div className="transform-block">
-                    <p className="eyebrow">What We Help Families Do</p>
+                    <p className="eyebrow">{content.transform_eyebrow}</p>
                     <div className="transform-grid">
-                        <article className="card transform-card">
-                            <span className="transform-from">Complexity</span>
-                            <span className="transform-arrow" aria-hidden="true">&rarr;</span>
-                            <span className="transform-to">Clarity</span>
-                        </article>
-                        <article className="card transform-card">
-                            <span className="transform-from">Transition</span>
-                            <span className="transform-arrow" aria-hidden="true">&rarr;</span>
-                            <span className="transform-to">Alignment</span>
-                        </article>
-                        <article className="card transform-card">
-                            <span className="transform-from">Inherited Responsibility</span>
-                            <span className="transform-arrow" aria-hidden="true">&rarr;</span>
-                            <span className="transform-to">Intentional Leadership</span>
-                        </article>
+                        {(content.transforms || []).map((item, index) => (
+                            <article className="card transform-card" key={`${item.from}-${index}`}>
+                                <span className="transform-from">{item.from}</span>
+                                <span className="transform-arrow" aria-hidden="true">&rarr;</span>
+                                <span className="transform-to">{item.to}</span>
+                            </article>
+                        ))}
                     </div>
                 </div>
 
                 <div className="process-block">
-                    <p className="eyebrow">How We Work</p>
-                    <h3>A process built for how families actually change.</h3>
+                    <p className="eyebrow">{content.process_eyebrow}</p>
+                    <h3>{content.process_heading}</h3>
                     <div className="process-grid">
-                        <article className="process-step">
-                            <span className="section-number">01</span>
-                            <div>
-                                <p className="process-label">Listen</p>
-                                <h4>Understand the story</h4>
-                                <p>
-                                    Not just the business&apos;s numbers, but the relationships, history, and unspoken expectations
-                                    behind them.
-                                </p>
-                            </div>
-                        </article>
-                        <article className="process-step">
-                            <span className="section-number">02</span>
-                            <div>
-                                <p className="process-label">Clarify</p>
-                                <h4>Name what&apos;s real</h4>
-                                <p>
-                                    Where alignment exists, where it doesn&apos;t, and what needs deciding before it becomes a crisis.
-                                </p>
-                            </div>
-                        </article>
-                        <article className="process-step">
-                            <span className="section-number">03</span>
-                            <div>
-                                <p className="process-label">Guide</p>
-                                <h4>Work alongside you</h4>
-                                <p>
-                                    Governance design, succession planning, and leadership development — at a pace your family can
-                                    sustain.
-                                </p>
-                            </div>
-                        </article>
-                        <article className="process-step">
-                            <span className="section-number">04</span>
-                            <div>
-                                <p className="process-label">Sustain</p>
-                                <h4>Stay engaged</h4>
-                                <p>
-                                    Legacy isn&apos;t a one-time decision. We stay with you as your family and business evolve.
-                                </p>
-                            </div>
-                        </article>
+                        {(content.process_steps || []).map((step, index) => (
+                            <article className="process-step" key={`${step.label}-${index}`}>
+                                <span className="section-number">{String(index + 1).padStart(2, "0")}</span>
+                                <div>
+                                    <p className="process-label">{step.label}</p>
+                                    <h4>{step.title}</h4>
+                                    <p>{step.body}</p>
+                                </div>
+                            </article>
+                        ))}
                     </div>
                 </div>
 
                 <div className="why-block">
-                    <p className="eyebrow">Why SAKOUR</p>
-                    <h3 className="why-tagline">Businesses don&apos;t grow until their leaders do.</h3>
-                    <p>
-                        Family enterprises rarely fail for lack of strategy. They fail when leadership, family alignment, and culture
-                        can&apos;t carry the strategy they already have. So our work begins where every plan will ultimately succeed or
-                        fail: with the leader — then moves outward to the family, the culture, and the enterprise.
-                    </p>
-                    <p>
-                        Most advisors bring one lens — legal, financial, or governance. SAKOUR was built differently: from decades
-                        inside the room where enterprise transformation actually happens, a rigorous formal grounding in family
-                        business governance and succession, a hands-on coaching practice — and the lived experience of a family
-                        business owner.
-                    </p>
-                    <p>
-                        We don&apos;t bring a single playbook. What works for a third-generation Gulf conglomerate rarely works the
-                        same way for a European family institution or an African family enterprise entering its next chapter. Real
-                        guidance has to be earned across cultures, not templated.
-                    </p>
+                    <p className="eyebrow">{content.why_eyebrow}</p>
+                    <h3 className="why-tagline">{content.why_tagline}</h3>
+                    <p>{content.why_paragraph_1}</p>
+                    <p>{content.why_paragraph_2}</p>
+                    <p>{content.why_paragraph_3}</p>
                 </div>
 
                 <div className="regions-block">
-                    <p className="eyebrow">Where We Work</p>
-                    <p className="lead">
-                        One practice, four worlds — and the cross-border families who span them. Because guidance has to be earned in
-                        a culture, not imported into it.
-                    </p>
+                    <p className="eyebrow">{content.regions_eyebrow}</p>
+                    <p className="lead">{content.regions_lead}</p>
                     <div className="regions-grid">
-                        <article className="card region-card">
-                            <h3>United Kingdom</h3>
-                            <p>
-                                Where SAKOUR is rooted — home of our UK retreats, the Edinburgh &amp; Glasgow Leadership Games, and our
-                                Cambridge-grounded practice.
-                            </p>
-                        </article>
-                        <article className="card region-card">
-                            <h3>Europe</h3>
-                            <p>
-                                Multi-generational family institutions navigating succession, professionalization, and a next
-                                generation that demands purpose.
-                            </p>
-                        </article>
-                        <article className="card region-card">
-                            <h3>Middle East</h3>
-                            <p>
-                                Three decades of C-level trust across the region — where family, faith, and enterprise have never been
-                                separate things.
-                            </p>
-                        </article>
-                        <article className="card region-card">
-                            <h3>Indonesia &amp; Southeast Asia</h3>
-                            <p>
-                                Home of our royal retreat, and a rising generation of family enterprises bridging tradition and
-                                transformation.
-                            </p>
-                        </article>
+                        {(content.regions || []).map((region, index) => (
+                            <article className="card region-card" key={region.title || index}>
+                                <h3>{region.title}</h3>
+                                <p>{region.body}</p>
+                            </article>
+                        ))}
                     </div>
                 </div>
             </section>
@@ -537,59 +602,42 @@ function HomePage() {
                 <div
                     className="founder-photo"
                     role="img"
-                    aria-label="Raouda Sakour"
+                    aria-label={content.founder_name}
                     style={{ backgroundImage: `linear-gradient(rgba(17, 16, 13, 0.2), rgba(17, 16, 13, 0.12)), url("${FOUNDER_PHOTO}")` }}
                 />
                 <article className="card founder-card">
-                    <p className="eyebrow">Our Founder</p>
-                    <h3>Raouda Sakour</h3>
-                    <p className="founder-role">Founder, {BRAND_NAME}</p>
-                    <p className="founder-hook">Raouda doesn&apos;t just advise family businesses. She owns and leads one.</p>
-                    <p>
-                        As an owner of a family property business, the questions her clients carry are questions she lives with too —
-                        how to grow what the family has built, how to be fair to both the business and the relationships behind it, and
-                        how to prepare what comes next without losing what matters most.
-                    </p>
-                    <p>
-                        She pairs that insider&apos;s understanding with an outsider&apos;s rigor: 26+ years inside some of the world&apos;s
-                        leading technology organizations — Oracle, Accenture, Capgemini, and Cognizant — leading digital and cloud
-                        transformation with C-level leaders across the Middle East, Europe, the UK, and Africa.
-                    </p>
-                    <p>
-                        She completed the Cambridge Judge Business School Family Business Leadership Programme, and is a Certified John
-                        Maxwell Coach and DISC Consultant since 2020 — currently in Maxwell Leadership&apos;s Executive Director Program —
-                        as well as a Certified John Maxwell Youth Coach, a credential she carries into every next-generation engagement,
-                        because preparing young leaders is not a service line for her. It&apos;s her heart.
-                    </p>
+                    <p className="eyebrow">{content.founder_eyebrow}</p>
+                    <h3>{content.founder_name}</h3>
+                    <p className="founder-role">{content.founder_role}</p>
+                    <p className="founder-hook">{content.founder_hook}</p>
+                    <p>{content.founder_paragraph_1}</p>
+                    <p>{content.founder_paragraph_2}</p>
+                    <p>{content.founder_paragraph_3}</p>
                     <ul className="founder-credentials">
-                        <li>Family Business Owner</li>
-                        <li>Oracle · Accenture · Capgemini · Cognizant</li>
-                        <li>Cambridge Judge — Family Business Leadership</li>
-                        <li>Maxwell Coach · DISC Consultant · Youth Coach</li>
+                        {(content.founder_credentials || []).map((credential, index) => (
+                            <li key={index}>{credential}</li>
+                        ))}
                     </ul>
                     <blockquote className="founder-quote">
-                        <p>
-                            A pilot is trained to see the whole landscape at once, to stay calm when visibility drops, and to always
-                            have a flight plan. I bring the same discipline to family enterprises — I call it leadership with altitude.
-                        </p>
-                        <footer>Raouda Sakour — Pilot in training, Edinburgh</footer>
+                        <p>{content.founder_quote}</p>
+                        <footer>{content.founder_quote_footer}</footer>
                     </blockquote>
                 </article>
             </section>
             <section className="container section">
                 <article className="card cta-card">
-                    <p className="eyebrow">Get In Touch</p>
-                    <h3>Start a conversation about your next chapter.</h3>
-                    <p>Have questions, comments, or inquiries? We would love to hear from you and help map your growth path.</p>
-                    <Link className="btn btn-primary" to="/contact">
-                        Book a Discovery Call
-                    </Link>
+                    <p className="eyebrow">{content.cta_eyebrow}</p>
+                    <h3>{content.cta_heading}</h3>
+                    <p>{content.cta_body}</p>
+                    <PageLink className="btn btn-primary" to={content.cta_button_link}>
+                        {content.cta_button_text}
+                    </PageLink>
                 </article>
             </section>
             {showHomePopup && (
                 <div className="booking-success-overlay" role="dialog" aria-modal="true" aria-label="Payment update">
                     <div className="booking-success-modal">
-                        <h3>{paymentResult === "success" ? "Success" : "Payment update"}</h3>
+                        <h3>{verifiedResult ? "Email verified" : "Payment update"}</h3>
                         <p>{homePopupMessage}</p>
                         <button type="button" className="btn btn-primary" onClick={closeHomePopup}>
                             Close
@@ -602,34 +650,58 @@ function HomePage() {
 }
 
 function MissionPage() {
+    const [content, setContent] = useState(null);
+
+    useEffect(() => {
+        async function loadContent() {
+            try {
+                const response = await fetch("/api/page-content");
+                const data = await response.json();
+                setContent(data.content ?? null);
+            } catch {
+                setContent(null);
+            }
+        }
+
+        loadContent();
+    }, []);
+
+    if (!content) {
+        return (
+            <Layout>
+                <section className="container section">
+                    <p className="lead">Loading…</p>
+                </section>
+            </Layout>
+        );
+    }
+
+    const bannerStyle = {
+        backgroundImage: `linear-gradient(rgba(22, 18, 10, 0.58), rgba(22, 18, 10, 0.62)), url("${content.mission_banner_url}")`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+    };
+
     return (
         <Layout>
-            <section className="impact-band mission-hero">
+            <section className="impact-band mission-hero" style={bannerStyle}>
                 <div className="container impact-inner">
-                    <p className="eyebrow">The SAKOUR Mission</p>
-                    <h2>One million futures.</h2>
-                    <p>
-                        SAKOUR Family Enterprise exists for a purpose larger than itself. Raouda&apos;s lifetime mission is to fund the
-                        education of one million medical students around the world — young people with the calling to heal, and without
-                        the means to get there.
-                    </p>
-                    <p>
-                        It began in 2017, with her charitable foundation sponsoring medical students in Syria and supporting communities
-                        across Africa. A quarter of everything SAKOUR earns serves this mission — which means every family we work with
-                        becomes part of it. Every leader who grows, every succession that succeeds, every business that thrives sends
-                        another young person toward medicine.
-                    </p>
-                    <p className="impact-closing">When your family business grows, another family&apos;s future grows with it.</p>
+                    <p className="eyebrow">{content.mission_eyebrow}</p>
+                    <h2>{content.mission_heading}</h2>
+                    <p>{content.mission_paragraph_1}</p>
+                    <p>{content.mission_paragraph_2}</p>
+                    <p className="impact-closing">{content.mission_closing}</p>
                 </div>
             </section>
             <section className="container section">
                 <article className="card cta-card">
-                    <p className="eyebrow">Be Part of It</p>
-                    <h3>Every engagement moves the mission forward.</h3>
-                    <p>Start a conversation about your family enterprise — and become part of one million futures.</p>
-                    <Link className="btn btn-primary" to="/booking">
-                        Start a Legacy Conversation
-                    </Link>
+                    <p className="eyebrow">{content.mission_cta_eyebrow}</p>
+                    <h3>{content.mission_cta_heading}</h3>
+                    <p>{content.mission_cta_body}</p>
+                    <PageLink className="btn btn-primary" to={content.mission_cta_button_link}>
+                        {content.mission_cta_button_text}
+                    </PageLink>
                 </article>
             </section>
         </Layout>
@@ -1216,6 +1288,10 @@ function BookingPage() {
                                 className="btn btn-primary cursor-pointer"
                                 onClick={() => {
                                     setShowSuccessPopup(false);
+                                    const url = new URL(window.location.href);
+                                    url.searchParams.delete("payment");
+                                    url.searchParams.delete("session_id");
+                                    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
                                 }}
                             >
                                 Close
@@ -1245,6 +1321,57 @@ function ContactPage() {
     );
 }
 
+function LegalPolicyPage({ eyebrow, title, htmlKey }) {
+    const [content, setContent] = useState(null);
+
+    useEffect(() => {
+        async function loadContent() {
+            try {
+                const response = await fetch("/api/legal-content");
+                const data = await response.json();
+                setContent(data.content ?? null);
+            } catch {
+                setContent(null);
+            }
+        }
+
+        loadContent();
+    }, []);
+
+    if (!content) {
+        return (
+            <Layout>
+                <section className="container section">
+                    <p className="lead">Loading…</p>
+                </section>
+            </Layout>
+        );
+    }
+
+    return (
+        <Layout>
+            <section className="container section legal-page">
+                <p className="eyebrow">{eyebrow}</p>
+                <h2>{title}</h2>
+                <article className="card legal-content-card">
+                    <div
+                        className="legal-content-body program-details"
+                        dangerouslySetInnerHTML={{ __html: content[htmlKey] || "" }}
+                    />
+                </article>
+            </section>
+        </Layout>
+    );
+}
+
+function PrivacyPage() {
+    return <LegalPolicyPage eyebrow="Legal" title="Privacy policy" htmlKey="privacy_policy_html" />;
+}
+
+function CookiesPage() {
+    return <LegalPolicyPage eyebrow="Legal" title="Cookie policy" htmlKey="cookie_policy_html" />;
+}
+
 function App() {
     return (
         <AuthProvider>
@@ -1259,6 +1386,8 @@ function App() {
                     <Route path="/events/:slug" element={<EventDetailPage Layout={Layout} />} />
                     <Route path="/booking" element={<BookingPage />} />
                     <Route path="/contact" element={<ContactPage />} />
+                    <Route path="/privacy" element={<PrivacyPage />} />
+                    <Route path="/cookies" element={<CookiesPage />} />
                     <Route path="/login" element={<LoginPage Layout={Layout} />} />
                     <Route path="/register" element={<RegisterPage Layout={Layout} />} />
                 </Routes>

@@ -29,6 +29,10 @@ class ProgramsTable
                 TextColumn::make('price_cents')
                     ->label('Price')
                     ->formatStateUsing(fn ($state, Program $record): string => $record->formattedPriceLabel()),
+                TextColumn::make('subscribers_count')
+                    ->label('Subscribers')
+                    ->counts('subscribers')
+                    ->sortable(),
                 TextColumn::make('billing_interval_months')
                     ->label('Billing')
                     ->formatStateUsing(fn (?int $state): string => $state

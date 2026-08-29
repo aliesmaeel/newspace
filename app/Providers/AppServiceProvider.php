@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Models\Appointment;
+use App\Models\ContactInquiry;
 use App\Models\EventRegistration;
 use App\Observers\AppointmentObserver;
+use App\Observers\ContactInquiryObserver;
 use App\Observers\EventRegistrationObserver;
 use Illuminate\Support\ServiceProvider;
 
@@ -24,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Appointment::observe(AppointmentObserver::class);
+        ContactInquiry::observe(ContactInquiryObserver::class);
         EventRegistration::observe(EventRegistrationObserver::class);
 
         $mailPort = (int) config('mail.mailers.smtp.port');

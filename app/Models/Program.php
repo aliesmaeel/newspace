@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Program extends Model
 {
@@ -67,5 +69,15 @@ class Program extends Model
     {
         return trim((string) $this->stripe_price_id) !== ''
             && trim((string) $this->stripe_product_id) !== '';
+    }
+
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class, 'program_plan_key', 'slug');
+    }
+
+    public function subscribers(): HasMany
+    {
+        return $this->appointments()->where('status', '!=', Appointment::STATUS_REJECTED);
     }
 }

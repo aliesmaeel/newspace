@@ -18,15 +18,15 @@ class EventHistoryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::Clock;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Booking';
+    protected static string|UnitEnum|null $navigationGroup = 'Events';
 
-    protected static ?string $navigationLabel = 'Event History';
+    protected static ?string $navigationLabel = 'Event history';
 
     protected static ?string $modelLabel = 'event registration';
 
     protected static ?string $pluralModelLabel = 'event history';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {

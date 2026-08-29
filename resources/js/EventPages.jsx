@@ -90,10 +90,12 @@ export function EventDetailPage({ Layout }) {
 
     useEffect(() => {
         if (searchParams.get("registration") === "success") {
-            setMessage("Payment received. You are registered for this event!");
+            setMessage("You are registered for this event!");
             if (!authLoading) {
                 loadEvent();
             }
+        } else if (searchParams.get("registration") === "cancelled") {
+            setError("Payment was cancelled. You can register again when ready.");
         }
     }, [searchParams, authLoading, loadEvent]);
 

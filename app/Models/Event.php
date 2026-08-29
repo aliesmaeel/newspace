@@ -53,6 +53,11 @@ class Event extends Model
         return $this->hasMany(EventRegistration::class);
     }
 
+    public function attendees(): HasMany
+    {
+        return $this->registrations()->where('status', 'confirmed');
+    }
+
     public function promoCodes(): HasMany
     {
         return $this->hasMany(EventPromoCode::class);
