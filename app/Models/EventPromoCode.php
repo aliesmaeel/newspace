@@ -10,6 +10,7 @@ class EventPromoCode extends Model
 {
     protected $fillable = [
         'event_id',
+        'event_occurrence_id',
         'code',
         'discount_percentage',
         'stripe_coupon_id',
@@ -30,6 +31,11 @@ class EventPromoCode extends Model
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
+    }
+
+    public function occurrence(): BelongsTo
+    {
+        return $this->belongsTo(EventOccurrence::class, 'event_occurrence_id');
     }
 
     public function registrations(): HasMany

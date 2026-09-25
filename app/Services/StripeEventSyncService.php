@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Event;
+use App\Models\EventOccurrence;
 use RuntimeException;
 use Stripe\Price;
 use Stripe\Product;
@@ -12,9 +12,9 @@ class StripeEventSyncService
 {
     public function __construct(private IntegrationSettingsService $settings) {}
 
-    public function sync(Event $event): Event
+    public function sync(EventOccurrence $occurrence): EventOccurrence
     {
-        if ((int) $event->price_cents < 100) {
+        if ((int) $occurrence->price_cents < 100) {
             throw new RuntimeException('Set a price of at least 100 pence before syncing to Stripe.');
         }
 
@@ -25,25 +25,39 @@ class StripeEventSyncService
 
         Stripe::setApiKey($secretKey);
 
-        $productId = trim((string) ($event->stripe_product_id ?? ''));
+        $occurrence->loadMissing('event');
+        $event = $occurrence->event;
+        if (! $event) {
+            throw new RuntimeException('Occurrence is missing its parent event.');
+        }
+
+        $productName = $event->title;
+        if (filled($occurrence->label)) {
+            $productName .= ' — ' . $occurrence->label;
+        } elseif ($occurrence->starts_at) {
+            $productName .= ' — ' . $occurrence->starts_at->format('j M Y');
+        }
+
+        $productId = trim((string) ($occurrence->stripe_product_id ?? ''));
         if ($productId === '') {
             $product = Product::create([
-                'name' => $event->title,
+                'name' => $productName,
                 'metadata' => [
                     'event_id' => (string) $event->id,
                     'event_slug' => (string) $event->slug,
+                    'event_occurrence_id' => (string) $occurrence->id,
                 ],
             ]);
             $productId = $product->id;
         } else {
-            Product::update($productId, ['name' => $event->title]);
+            Product::update($productId, ['name' => $productName]);
         }
 
-        $previousPriceId = trim((string) ($event->stripe_price_id ?? ''));
+        $previousPriceId = trim((string) ($occurrence->stripe_price_id ?? ''));
 
         $price = Price::create([
             'product' => $productId,
-            'unit_amount' => (int) $event->price_cents,
+            'unit_amount' => (int) $occurrence->price_cents,
             'currency' => config('services.stripe.currency', 'gbp'),
         ]);
 
@@ -55,11 +69,11 @@ class StripeEventSyncService
             }
         }
 
-        $event->update([
+        $occurrence->update([
             'stripe_product_id' => $productId,
             'stripe_price_id' => $price->id,
         ]);
 
-        return $event->fresh();
+        return $occurrence->fresh();
     }
 }

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Events\Schemas;
 
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
@@ -34,14 +33,6 @@ class EventForm
                     ]),
                 RichEditor::make('description')->columnSpanFull(),
                 FileUpload::make('image_url')->label('Event image')->disk('public')->directory('events')->image()->columnSpanFull(),
-                Select::make('location_type')->options(['physical' => 'Physical', 'virtual' => 'Virtual'])->required()->default('physical'),
-                TextInput::make('address')->maxLength(500)->columnSpanFull(),
-                TextInput::make('latitude')->numeric(),
-                TextInput::make('longitude')->numeric(),
-                TextInput::make('virtual_link')->url()->maxLength(2048)->columnSpanFull(),
-                TextInput::make('price_cents')->label('Price (pence)')->numeric()->default(0)->required(),
-                DateTimePicker::make('starts_at')->required(),
-                DateTimePicker::make('ends_at'),
                 TextInput::make('sort_order')->numeric()->default(0)->required(),
                 Toggle::make('is_active')->default(true)->required(),
                 Toggle::make('first_time_free')

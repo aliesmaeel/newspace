@@ -3,6 +3,17 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { apiFetch } from "./apiClient";
 import { useAuth } from "./AuthContext";
 
+function formatSessionDate(value) {
+    if (!value) {
+        return "";
+    }
+
+    return new Date(value).toLocaleString("en-GB", {
+        dateStyle: "medium",
+        timeStyle: "short",
+    });
+}
+
 export function EventsPage({ Layout }) {
     const [events, setEvents] = useState([]);
 
@@ -19,8 +30,8 @@ export function EventsPage({ Layout }) {
             <section className="container section">
                 <p className="eyebrow">Events</p>
                 <h2>Upcoming events</h2>
-                <p className="lead">Register for an event. Your first event is free; after that, payment is required.</p>
-                <div className="programs-stack">
+                <p className="lead">Browse events and choose a date and location that works for you.</p>
+                <div className={`events-stack${events.length === 1 ? " events-stack--single" : ""}`}>
                     {events.map((event) => (
                         <article className="card program-card" key={event.slug}>
                             {event.image_url ? (
@@ -32,20 +43,8 @@ export function EventsPage({ Layout }) {
                                 />
                             ) : null}
                             <div className="program-content">
-                                <p className="duration">
-                                    {event.location_label || (event.location_type === "virtual" ? "Virtual" : "In person")}
-                                    <span className="event-meta-sep"> · </span>
-                                    {event.price_label}
-                                </p>
+                                {event.summary_label ? <p className="duration">{event.summary_label}</p> : null}
                                 <h3>{event.title}</h3>
-                                <p className="program-details">
-                                    {event.starts_at
-                                        ? new Date(event.starts_at).toLocaleString("en-GB", {
-                                              dateStyle: "medium",
-                                              timeStyle: "short",
-                                          })
-                                        : ""}
-                                </p>
                                 {event.description ? (
                                     <div
                                         className="program-details event-card-description"
@@ -65,16 +64,115 @@ export function EventsPage({ Layout }) {
     );
 }
 
+function OccurrenceCard({
+    event,
+    occurrence,
+    user,
+    slug,
+    firstTimeFreeEligible,
+    submittingId,
+    onRegister,
+}) {
+    const [promoCode, setPromoCode] = useState("");
+    const navigate = useNavigate();
+    const registered = occurrence.user_registration?.status === "confirmed";
+    const paid = occurrence.user_registration?.payment_status === "paid";
+    const isVirtual = occurrence.location_type === "virtual";
+    const submitting = submittingId === occurrence.id;
+
+    return (
+        <article className="card booking-card event-occurrence-card">
+            <div className="event-occurrence-header">
+                <h3>{occurrence.label || occurrence.display_label || occurrence.location_label}</h3>
+                <p className="duration">{occurrence.price_label}</p>
+            </div>
+            <p className="lead" style={{ marginBottom: "0.5rem" }}>
+                <span className={`event-location-badge event-location-badge--${occurrence.location_type || "physical"}`}>
+                    {occurrence.location_label}
+                </span>
+                <span className="event-meta-sep"> · </span>
+                {formatSessionDate(occurrence.starts_at)}
+            </p>
+            {occurrence.location_type === "physical" && occurrence.address ? (
+                <p className="lead">
+                    <strong>Location:</strong> {occurrence.address}
+                    {occurrence.map_url ? (
+                        <>
+                            {" "}
+                            <a href={occurrence.map_url} target="_blank" rel="noopener noreferrer">
+                                View on map
+                            </a>
+                        </>
+                    ) : null}
+                </p>
+            ) : null}
+            {isVirtual && occurrence.virtual_link ? (
+                <p className="lead">
+                    <strong>Meeting link:</strong>{" "}
+                    <a href={occurrence.virtual_link} target="_blank" rel="noopener noreferrer" style={{ color: "#0057ff" }}>
+                        Join online
+                    </a>
+                </p>
+            ) : null}
+            {isVirtual && !occurrence.virtual_link && occurrence.has_virtual_meeting ? (
+                <p className="lead event-meeting-hint">
+                    {registered && !paid
+                        ? "Your payment is being confirmed. Refresh this page in a moment, or contact support if the meeting link does not appear."
+                        : "The meeting link will appear here after you register and complete payment (or use a free registration)."}
+                </p>
+            ) : null}
+
+            {registered ? (
+                <p className="booking-success">You are registered for this session.</p>
+            ) : (
+                <>
+                    {!user && (
+                        <p className="lead">
+                            <Link to={`/register?redirect=/events/${slug}`}>Register</Link> or{" "}
+                            <Link to={`/login?redirect=/events/${slug}`}>log in</Link> to attend.
+                        </p>
+                    )}
+                    {firstTimeFreeEligible || Number(occurrence.price_cents) < 100 ? (
+                        <p className="lead">
+                            Experience the {event.event_type_name || "event"} for the first time, with our compliments
+                        </p>
+                    ) : null}
+                    <div className="booking-form" style={{ marginTop: "0.75rem" }}>
+                        <input
+                            type="text"
+                            placeholder="Promo code (optional)"
+                            value={promoCode}
+                            onChange={(e) => setPromoCode(e.target.value)}
+                        />
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            disabled={submitting}
+                            onClick={() => {
+                                if (!user) {
+                                    navigate(`/register?redirect=/events/${slug}`);
+                                    return;
+                                }
+                                onRegister(occurrence.id, promoCode);
+                            }}
+                        >
+                            {submitting ? "Please wait…" : user ? "Register for this session" : "Register / log in to attend"}
+                        </button>
+                    </div>
+                </>
+            )}
+        </article>
+    );
+}
+
 export function EventDetailPage({ Layout }) {
     const { slug } = useParams();
     const [searchParams] = useSearchParams();
-    const navigate = useNavigate();
     const { user, loading: authLoading } = useAuth();
     const [event, setEvent] = useState(null);
-    const [promoCode, setPromoCode] = useState("");
     const [error, setError] = useState("");
     const [message, setMessage] = useState("");
-    const [submitting, setSubmitting] = useState(false);
+    const [submittingId, setSubmittingId] = useState(null);
 
     const loadEvent = React.useCallback(async () => {
         const { data } = await apiFetch(`/api/events/${slug}`);
@@ -90,7 +188,7 @@ export function EventDetailPage({ Layout }) {
 
     useEffect(() => {
         if (searchParams.get("registration") === "success") {
-            setMessage("You are registered for this event!");
+            setMessage("You are registered for this session!");
             if (!authLoading) {
                 loadEvent();
             }
@@ -99,17 +197,15 @@ export function EventDetailPage({ Layout }) {
         }
     }, [searchParams, authLoading, loadEvent]);
 
-    async function handleRegister() {
-        if (!user) {
-            navigate(`/register?redirect=/events/${slug}`);
-            return;
-        }
-        setSubmitting(true);
+    async function handleRegister(occurrenceId, promoCode) {
+        setSubmittingId(occurrenceId);
         setError("");
+        setMessage("");
         try {
             const { response, data } = await apiFetch(`/api/events/${slug}/register`, {
                 method: "POST",
                 body: JSON.stringify({
+                    occurrence_id: occurrenceId,
                     promo_code: promoCode || null,
                     return_base_url: window.location.origin,
                 }),
@@ -126,7 +222,7 @@ export function EventDetailPage({ Layout }) {
         } catch (e) {
             setError(e.message);
         } finally {
-            setSubmitting(false);
+            setSubmittingId(null);
         }
     }
 
@@ -140,94 +236,51 @@ export function EventDetailPage({ Layout }) {
         );
     }
 
-    const registered = event.user_registration?.status === "confirmed";
-    const paid = event.user_registration?.payment_status === "paid";
-    const locationLabel =
-        event.location_label || (event.location_type === "virtual" ? "Virtual" : "In person");
-    const isVirtual = event.location_type === "virtual";
+    const occurrences = Array.isArray(event.occurrences) ? event.occurrences : [];
+    const highlightedOccurrenceId = searchParams.get("occurrence");
 
     return (
         <Layout>
             <section className="container section">
                 <p className="eyebrow">Event</p>
                 <h2>{event.title}</h2>
-                <p className="lead">
-                    <span className={`event-location-badge event-location-badge--${event.location_type || "physical"}`}>
-                        {locationLabel}
-                    </span>
-                    <span className="event-meta-sep"> · </span>
-                    {event.price_label}
-                </p>
                 {event.image_url ? (
                     <img src={event.image_url} alt={event.title} className="service-card-image" style={{ marginBottom: "1rem" }} />
                 ) : null}
                 {event.description ? (
                     <div className="program-details" dangerouslySetInnerHTML={{ __html: event.description }} />
                 ) : null}
-                {event.location_type === "physical" && event.address ? (
-                    <p className="lead">
-                        <strong>Location:</strong> {event.address}
-                        {event.map_url ? (
-                            <>
-                                {" "}
-                                <a href={event.map_url} target="_blank" rel="noopener noreferrer">
-                                    View on map
-                                </a>
-                            </>
-                        ) : null}
-                    </p>
-                ) : null}
-                {isVirtual && event.virtual_link ? (
-                    <p className="lead">
-                        <strong>Meeting link:</strong>{" "}
-                        <a href={event.virtual_link} target="_blank" rel="noopener noreferrer" style={{ color: "#0057ff" }}>
-                            Join online
-                        </a>
-                    </p>
-                ) : null}
-                {isVirtual && !event.virtual_link && event.has_virtual_meeting ? (
-                    <p className="lead event-meeting-hint">
-                        {registered && !paid
-                            ? "Your payment is being confirmed. Refresh this page in a moment, or contact support if the meeting link does not appear."
-                            : "The meeting link will appear here after you register and complete payment (or use a free registration)."}
-                    </p>
-                ) : null}
+
                 {message && <p className="booking-success">{message}</p>}
                 {error && <p className="booking-error">{error}</p>}
-                {registered ? (
-                    <>
-                        <p className="booking-success">You are registered for this event.</p>
-                        {isVirtual && paid && !event.virtual_link && event.has_virtual_meeting ? (
-                            <p className="lead event-meeting-hint">Meeting link is not available yet. Please contact support.</p>
-                        ) : null}
-                    </>
+
+                <h3 style={{ marginTop: "2rem", marginBottom: "0.75rem" }}>Dates &amp; locations</h3>
+                {occurrences.length === 0 ? (
+                    <p className="lead">No upcoming sessions for this event yet.</p>
                 ) : (
-                    <>
-                        {!user && (
-                            <p className="lead">
-                                <Link to={`/register?redirect=/events/${slug}`}>Register</Link> or{" "}
-                                <Link to={`/login?redirect=/events/${slug}`}>log in</Link> to attend.
-                            </p>
-                        )}
-                        {event.first_time_free_eligible ||
-                        (Number(event.price_cents) < 100 && !event.has_attended_before) ? (
-                            <p className="lead">
-                                Experience the {event.event_type_name || "Leadership Game"} for the first
-                                time, with our compliments
-                            </p>
-                        ) : null}
-                        <div className="booking-form" style={{ maxWidth: "28rem", marginTop: "1rem" }}>
-                            <input
-                                type="text"
-                                placeholder="Promo code (optional)"
-                                value={promoCode}
-                                onChange={(e) => setPromoCode(e.target.value)}
-                            />
-                            <button type="button" className="btn btn-primary" disabled={submitting} onClick={handleRegister}>
-                                {submitting ? "Please wait…" : user ? "Register for event" : "Register / log in to attend"}
-                            </button>
-                        </div>
-                    </>
+                    <div className="event-occurrences-stack">
+                        {occurrences.map((occurrence) => (
+                            <div
+                                key={occurrence.id}
+                                id={`occurrence-${occurrence.id}`}
+                                className={
+                                    String(highlightedOccurrenceId) === String(occurrence.id)
+                                        ? "event-occurrence-highlight"
+                                        : undefined
+                                }
+                            >
+                                <OccurrenceCard
+                                    event={event}
+                                    occurrence={occurrence}
+                                    user={user}
+                                    slug={slug}
+                                    firstTimeFreeEligible={event.first_time_free_eligible}
+                                    submittingId={submittingId}
+                                    onRegister={handleRegister}
+                                />
+                            </div>
+                        ))}
+                    </div>
                 )}
             </section>
         </Layout>

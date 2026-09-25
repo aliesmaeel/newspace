@@ -19,8 +19,9 @@ class EventRegistrationObserver
         }
 
         try {
-            $registration->loadMissing(['event.eventType', 'user']);
+            $registration->loadMissing(['event.eventType', 'occurrence', 'user']);
             $event = $registration->event;
+            $occurrence = $registration->occurrence;
             $user = $registration->user;
 
             EventRegistrationHistory::updateOrCreate(
@@ -30,14 +31,14 @@ class EventRegistrationObserver
                     'event_title' => $event?->title ?? 'Deleted event',
                     'event_type' => $event?->eventType?->name,
                     'event_type_id' => $event?->event_type_id,
-                    'event_starts_at' => $event?->starts_at,
-                    'event_location_type' => $event?->location_type,
+                    'event_starts_at' => $occurrence?->starts_at,
+                    'event_location_type' => $occurrence?->location_type,
                     'user_id' => $registration->user_id,
                     'user_name' => $user?->name,
                     'user_email' => $user?->email,
                     'status' => $registration->status,
                     'payment_status' => $registration->payment_status,
-                    'amount_cents' => (int) ($event?->price_cents ?? 0),
+                    'amount_cents' => (int) ($occurrence?->price_cents ?? 0),
                     'registered_at' => $registration->registered_at ?? now(),
                 ],
             );

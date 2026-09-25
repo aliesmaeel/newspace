@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Models\EventOccurrence;
 use App\Models\EventRegistration;
 use App\Models\EventRegistrationHistory;
 use App\Services\EventRegistrationService;
@@ -17,11 +18,21 @@ class EventController extends Controller
     {
         $events = Event::query()
             ->where('is_active', true)
-            ->where('starts_at', '>=', now()->subDay())
-            ->orderBy('starts_at')
+            ->whereHas('occurrences', function ($query): void {
+                $query->where('is_active', true)
+                    ->where('starts_at', '>=', now()->subDay());
+            })
+            ->with(['occurrences' => function ($query): void {
+                $query->where('is_active', true)
+                    ->where('starts_at', '>=', now()->subDay())
+                    ->orderBy('starts_at')
+                    ->orderBy('sort_order');
+            }])
             ->orderBy('sort_order')
             ->get()
-            ->map(fn (Event $event): array => $this->eventPayload($event));
+            ->sortBy(fn (Event $event) => $event->occurrences->min('starts_at'))
+            ->values()
+            ->map(fn (Event $event): array => $this->listPayload($event));
 
         return response()->json(['events' => $events]);
     }
@@ -29,35 +40,38 @@ class EventController extends Controller
     public function show(string $slug): JsonResponse
     {
         $event = Event::query()
-            ->with('eventType')
+            ->with(['eventType', 'occurrences' => function ($query): void {
+                $query->where('is_active', true)
+                    ->where('starts_at', '>=', now()->subDay())
+                    ->orderBy('starts_at')
+                    ->orderBy('sort_order');
+            }])
             ->where('slug', $slug)
             ->where('is_active', true)
             ->firstOrFail();
 
         $user = request()->user();
-        $registration = null;
+        $registrationsByOccurrence = collect();
+
         if ($user) {
-            $registration = EventRegistration::query()
+            $registrations = EventRegistration::query()
                 ->where('event_id', $event->id)
                 ->where('user_id', $user->id)
-                ->first();
+                ->get();
 
-            if ($registration) {
+            foreach ($registrations as $registration) {
                 app(StripeEventCheckoutService::class)->syncRegistrationPayment($registration);
                 $registration->refresh();
             }
+
+            $registrationsByOccurrence = $registrations->keyBy('event_occurrence_id');
         }
 
-        $payload = $this->eventPayload($event, true, $registration);
+        $payload = $this->detailPayload($event, $registrationsByOccurrence);
         $payload['first_time_free'] = (bool) $event->first_time_free;
         $payload['event_type_name'] = $event->eventType?->name;
 
         if ($user) {
-            $payload['user_registration'] = $registration ? [
-                'status' => $registration->status,
-                'payment_status' => $registration->payment_status,
-            ] : null;
-
             $hasAttendedType = $event->event_type_id !== null
                 && EventRegistrationHistory::query()
                     ->where('user_id', $user->id)
@@ -68,7 +82,6 @@ class EventController extends Controller
             $payload['has_attended_before'] = $hasAttendedType;
             $payload['first_time_free_eligible'] = (bool) $event->first_time_free && ! $hasAttendedType;
         } else {
-            // Guests cannot be checked against history; advertise the offer when the toggle is on.
             $payload['first_time_free_eligible'] = (bool) $event->first_time_free;
         }
 
@@ -80,6 +93,7 @@ class EventController extends Controller
         $event = Event::query()->where('slug', $slug)->where('is_active', true)->firstOrFail();
 
         $validated = $request->validate([
+            'occurrence_id' => ['required', 'integer'],
             'promo_code' => ['nullable', 'string', 'max:64'],
             'return_base_url' => ['nullable', 'url'],
         ]);
@@ -89,10 +103,16 @@ class EventController extends Controller
             return response()->json(['message' => 'You must register or log in first.'], 401);
         }
 
+        $occurrence = EventOccurrence::query()
+            ->where('event_id', $event->id)
+            ->whereKey($validated['occurrence_id'])
+            ->where('is_active', true)
+            ->firstOrFail();
+
         try {
             $result = $registrations->register(
                 $user,
-                $event,
+                $occurrence,
                 $validated['promo_code'] ?? null,
                 $validated['return_base_url'] ?? null,
             );
@@ -103,49 +123,96 @@ class EventController extends Controller
         return response()->json($result);
     }
 
-    private function eventPayload(Event $event, bool $detailed = false, ?EventRegistration $registration = null): array
+    /**
+     * @return array<string, mixed>
+     */
+    private function listPayload(Event $event): array
     {
-        $imageUrl = $event->image_url;
-        if ($imageUrl && ! str_starts_with($imageUrl, 'http') && ! str_starts_with($imageUrl, '/')) {
-            $imageUrl = rtrim((string) config('app.url'), '/') . '/storage/' . ltrim($imageUrl, '/');
+        $imageUrl = $this->imageUrl($event);
+        $occurrences = $event->occurrences;
+        $minPrice = $occurrences->min('price_cents');
+        $sessionCount = $occurrences->count();
+
+        $summaryParts = [];
+        if ($sessionCount > 0) {
+            $summaryParts[] = $sessionCount === 1 ? '1 session' : "{$sessionCount} sessions";
+        }
+        if ($minPrice !== null) {
+            $summaryParts[] = ((int) $minPrice <= 0)
+                ? 'Free'
+                : 'From ' . \App\Support\Money::formatCents((int) $minPrice);
         }
 
-        $data = [
+        return [
             'slug' => $event->slug,
             'title' => $event->title,
             'description' => $event->description,
             'image_url' => $imageUrl,
-            'location_type' => $event->location_type,
-            'location_label' => $this->locationLabel($event),
-            'price_cents' => (int) $event->price_cents,
-            'price_label' => $event->formattedPriceLabel(),
-            'starts_at' => $event->starts_at?->toIso8601String(),
-            'ends_at' => $event->ends_at?->toIso8601String(),
+            'session_count' => $sessionCount,
+            'summary_label' => implode(' · ', $summaryParts),
+        ];
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int|string, EventRegistration>  $registrationsByOccurrence
+     * @return array<string, mixed>
+     */
+    private function detailPayload(Event $event, $registrationsByOccurrence): array
+    {
+        return [
+            'slug' => $event->slug,
+            'title' => $event->title,
+            'description' => $event->description,
+            'image_url' => $this->imageUrl($event),
+            'occurrences' => $event->occurrences->map(function (EventOccurrence $occurrence) use ($registrationsByOccurrence): array {
+                $registration = $registrationsByOccurrence->get($occurrence->id);
+
+                return $this->occurrencePayload($occurrence, $registration);
+            })->values()->all(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function occurrencePayload(EventOccurrence $occurrence, ?EventRegistration $registration = null): array
+    {
+        $data = [
+            'id' => $occurrence->id,
+            'label' => $occurrence->label,
+            'display_label' => $occurrence->displayLabel(),
+            'location_type' => $occurrence->location_type,
+            'location_label' => $occurrence->locationLabel(),
+            'address' => $occurrence->address,
+            'latitude' => $occurrence->latitude,
+            'longitude' => $occurrence->longitude,
+            'map_url' => $occurrence->mapUrl(),
+            'price_cents' => (int) $occurrence->price_cents,
+            'price_label' => $occurrence->formattedPriceLabel(),
+            'starts_at' => $occurrence->starts_at?->toIso8601String(),
+            'ends_at' => $occurrence->ends_at?->toIso8601String(),
+            'has_virtual_meeting' => $occurrence->isVirtual() && filled($occurrence->virtual_link),
+            'user_registration' => $registration ? [
+                'status' => $registration->status,
+                'payment_status' => $registration->payment_status,
+            ] : null,
         ];
 
-        if ($detailed) {
-            $data['address'] = $event->address;
-            $data['latitude'] = $event->latitude;
-            $data['longitude'] = $event->longitude;
-            $data['has_virtual_meeting'] = $event->isVirtual() && filled($event->virtual_link);
-            if ($event->isVirtual() && $registration && $this->canViewVirtualLink($registration)) {
-                $data['virtual_link'] = $event->virtual_link;
-            }
-            $data['map_url'] = ($event->latitude && $event->longitude)
-                ? 'https://www.google.com/maps?q=' . $event->latitude . ',' . $event->longitude
-                : ($event->address ? 'https://www.google.com/maps/search/?api=1&query=' . urlencode($event->address) : null);
+        if ($occurrence->isVirtual() && $registration && $this->canViewVirtualLink($registration)) {
+            $data['virtual_link'] = $occurrence->virtual_link;
         }
 
         return $data;
     }
 
-    private function locationLabel(Event $event): string
+    private function imageUrl(Event $event): ?string
     {
-        return match ($event->location_type) {
-            'virtual' => 'Virtual',
-            'physical' => 'In person',
-            default => 'In person',
-        };
+        $imageUrl = $event->image_url;
+        if ($imageUrl && ! str_starts_with($imageUrl, 'http') && ! str_starts_with($imageUrl, '/')) {
+            return rtrim((string) config('app.url'), '/') . '/storage/' . ltrim($imageUrl, '/');
+        }
+
+        return $imageUrl;
     }
 
     private function canViewVirtualLink(EventRegistration $registration): bool

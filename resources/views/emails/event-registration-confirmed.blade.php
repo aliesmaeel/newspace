@@ -8,21 +8,24 @@
 
     <ul>
         <li><strong>Event:</strong> {{ $event->title }}</li>
-        @if ($event->starts_at)
-            <li><strong>Starts:</strong> {{ $event->starts_at->format('l, F j, Y \a\t g:i A') }}</li>
+        @if ($occurrence?->label)
+            <li><strong>Session:</strong> {{ $occurrence->label }}</li>
         @endif
-        @if ($event->ends_at)
-            <li><strong>Ends:</strong> {{ $event->ends_at->format('l, F j, Y \a\t g:i A') }}</li>
+        @if ($occurrence?->starts_at)
+            <li><strong>Starts:</strong> {{ $occurrence->starts_at->format('l, F j, Y \a\t g:i A') }}</li>
         @endif
-        <li><strong>Format:</strong> {{ $event->isVirtual() ? 'Virtual' : 'In person' }}</li>
-        @if ($event->isPhysical() && $event->address)
-            <li><strong>Location:</strong> {{ $event->address }}</li>
+        @if ($occurrence?->ends_at)
+            <li><strong>Ends:</strong> {{ $occurrence->ends_at->format('l, F j, Y \a\t g:i A') }}</li>
+        @endif
+        <li><strong>Format:</strong> {{ $occurrence?->isVirtual() ? 'Virtual' : 'In person' }}</li>
+        @if ($occurrence?->isPhysical() && $occurrence->address)
+            <li><strong>Location:</strong> {{ $occurrence->address }}</li>
         @endif
         @if ($mapUrl)
             <li><strong>Map:</strong> <a href="{{ $mapUrl }}">{{ $mapUrl }}</a></li>
         @endif
-        @if ($event->isVirtual() && filled($event->virtual_link))
-            <li><strong>Meeting link:</strong> <a href="{{ $event->virtual_link }}">{{ $event->virtual_link }}</a></li>
+        @if ($occurrence?->isVirtual() && filled($occurrence->virtual_link))
+            <li><strong>Meeting link:</strong> <a href="{{ $occurrence->virtual_link }}">{{ $occurrence->virtual_link }}</a></li>
         @endif
     </ul>
 

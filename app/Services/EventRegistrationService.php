@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Event;
+use App\Models\EventOccurrence;
 use App\Models\EventPromoCode;
 use App\Models\EventRegistration;
 use App\Models\EventRegistrationHistory;
@@ -20,18 +20,25 @@ class EventRegistrationService
     /**
      * @return array{status: string, message?: string, checkout_url?: string, registration_id?: int}
      */
-    public function register(User $user, Event $event, ?string $promoCodeInput = null, ?string $returnBaseUrl = null): array
+    public function register(User $user, EventOccurrence $occurrence, ?string $promoCodeInput = null, ?string $returnBaseUrl = null): array
     {
+        $occurrence->loadMissing('event.eventType');
+        $event = $occurrence->event;
+
+        if (! $event || ! $event->is_active || ! $occurrence->is_active) {
+            throw new RuntimeException('This event session is not available.');
+        }
+
         $existing = EventRegistration::query()
-            ->where('event_id', $event->id)
+            ->where('event_occurrence_id', $occurrence->id)
             ->where('user_id', $user->id)
             ->first();
 
         if ($existing && $existing->status === 'confirmed') {
-            throw new RuntimeException('You are already registered for this event.');
+            throw new RuntimeException('You are already registered for this session.');
         }
 
-        $promo = $this->resolvePromoCode($event, $promoCodeInput);
+        $promo = $this->resolvePromoCode($occurrence, $promoCodeInput);
         $isFirstTimeFree = (bool) $event->first_time_free
             && $event->event_type_id !== null
             && ! EventRegistrationHistory::query()
@@ -42,13 +49,14 @@ class EventRegistrationService
 
         $isFree = $isFirstTimeFree
             || ($promo !== null && $promo->isFree())
-            || (int) $event->price_cents < 100;
+            || (int) $occurrence->price_cents < 100;
 
         if ($existing) {
             $registration = $existing;
         } else {
             $registration = EventRegistration::create([
                 'event_id' => $event->id,
+                'event_occurrence_id' => $occurrence->id,
                 'user_id' => $user->id,
                 'status' => 'pending_payment',
                 'payment_status' => 'pending',
@@ -79,11 +87,11 @@ class EventRegistrationService
             ];
         }
 
-        if (trim((string) $event->stripe_price_id) === '') {
-            throw new RuntimeException('This event is not synced to Stripe yet. Please contact support.');
+        if (trim((string) $occurrence->stripe_price_id) === '') {
+            throw new RuntimeException('This event session is not synced to Stripe yet. Please contact support.');
         }
 
-        $session = $this->checkout->createSession($registration, $event, $returnBaseUrl, $promo);
+        $session = $this->checkout->createSession($registration, $occurrence, $returnBaseUrl, $promo);
 
         $registration->update([
             'status' => 'pending_payment',
@@ -100,7 +108,7 @@ class EventRegistrationService
         ];
     }
 
-    private function resolvePromoCode(Event $event, ?string $input): ?EventPromoCode
+    private function resolvePromoCode(EventOccurrence $occurrence, ?string $input): ?EventPromoCode
     {
         $code = Str::upper(trim((string) $input));
         if ($code === '') {
@@ -108,7 +116,7 @@ class EventRegistrationService
         }
 
         $promo = EventPromoCode::query()
-            ->where('event_id', $event->id)
+            ->where('event_occurrence_id', $occurrence->id)
             ->where('code', $code)
             ->first();
 

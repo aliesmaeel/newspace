@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\Event;
+use App\Models\EventOccurrence;
 use App\Models\EventRegistration;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
@@ -17,6 +18,8 @@ class EventRegistrationConfirmedMail extends Mailable
 
     public Event $event;
 
+    public ?EventOccurrence $occurrence;
+
     public User $user;
 
     public string $eventUrl;
@@ -25,10 +28,13 @@ class EventRegistrationConfirmedMail extends Mailable
 
     public function __construct(public EventRegistration $registration)
     {
+        $registration->loadMissing(['event', 'occurrence', 'user']);
         $this->event = $registration->event;
+        $this->occurrence = $registration->occurrence;
         $this->user = $registration->user;
-        $this->eventUrl = rtrim((string) config('app.url'), '/') . '/events/' . $this->event->slug;
-        $this->mapUrl = $this->event->mapUrl();
+        $this->eventUrl = rtrim((string) config('app.url'), '/') . '/events/' . $this->event->slug
+            . ($this->occurrence ? '?occurrence=' . $this->occurrence->id : '');
+        $this->mapUrl = $this->occurrence?->mapUrl();
     }
 
     public function envelope(): Envelope

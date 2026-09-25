@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Event;
+use App\Models\EventOccurrence;
 use App\Models\EventPromoCode;
 use App\Models\EventRegistration;
 use App\Models\Transaction;
@@ -19,11 +20,21 @@ class StripeEventCheckoutService
         private EventRegistrationNotificationService $notifications,
     ) {}
 
-    public function createSession(EventRegistration $registration, Event $event, ?string $returnBaseUrl = null, ?EventPromoCode $promo = null): Session
-    {
-        $priceId = trim((string) $event->stripe_price_id);
+    public function createSession(
+        EventRegistration $registration,
+        EventOccurrence $occurrence,
+        ?string $returnBaseUrl = null,
+        ?EventPromoCode $promo = null,
+    ): Session {
+        $occurrence->loadMissing('event');
+        $event = $occurrence->event;
+        if (! $event) {
+            throw new RuntimeException('Occurrence is missing its parent event.');
+        }
+
+        $priceId = trim((string) $occurrence->stripe_price_id);
         if ($priceId === '') {
-            throw new RuntimeException('Stripe price is missing for this event.');
+            throw new RuntimeException('Stripe price is missing for this event session.');
         }
 
         $secretKey = (string) $this->settings->stripe('secret_key');
@@ -39,8 +50,8 @@ class StripeEventCheckoutService
 
         $sessionPayload = [
             'mode' => 'payment',
-            'success_url' => "{$appUrl}/events/{$event->slug}?registration=success&session_id={CHECKOUT_SESSION_ID}",
-            'cancel_url' => "{$appUrl}/events/{$event->slug}?registration=cancelled",
+            'success_url' => "{$appUrl}/events/{$event->slug}?occurrence={$occurrence->id}&registration=success&session_id={CHECKOUT_SESSION_ID}",
+            'cancel_url' => "{$appUrl}/events/{$event->slug}?occurrence={$occurrence->id}&registration=cancelled",
             'customer_email' => $registration->user->email,
             'line_items' => [[
                 'quantity' => 1,
@@ -49,6 +60,7 @@ class StripeEventCheckoutService
             'metadata' => [
                 'event_registration_id' => (string) $registration->id,
                 'event_id' => (string) $event->id,
+                'event_occurrence_id' => (string) $occurrence->id,
                 'user_id' => (string) $registration->user_id,
             ],
         ];
@@ -70,10 +82,6 @@ class StripeEventCheckoutService
         return $session;
     }
 
-    /**
-     * Ensure a Stripe Coupon exists for a partial-discount promo code and return its id.
-     * Returns null when there is no applicable discount (no promo, full/zero discount).
-     */
     private function resolveCouponId(?EventPromoCode $promo): ?string
     {
         if ($promo === null) {
@@ -97,6 +105,7 @@ class StripeEventCheckoutService
             'metadata' => [
                 'event_promo_code_id' => (string) $promo->id,
                 'event_id' => (string) $promo->event_id,
+                'event_occurrence_id' => (string) $promo->event_occurrence_id,
             ],
         ]);
 
@@ -105,9 +114,6 @@ class StripeEventCheckoutService
         return $coupon->id;
     }
 
-    /**
-     * Confirm registration when Stripe checkout is paid (webhook fallback for local/dev or delayed webhooks).
-     */
     public function syncRegistrationPayment(EventRegistration $registration): bool
     {
         if ($registration->status === 'confirmed' && $registration->payment_status === 'paid') {

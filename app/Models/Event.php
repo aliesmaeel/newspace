@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use App\Support\Money;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Event extends Model
 {
@@ -15,37 +15,25 @@ class Event extends Model
         'event_type_id',
         'description',
         'image_url',
-        'location_type',
-        'address',
-        'latitude',
-        'longitude',
-        'virtual_link',
-        'price_cents',
-        'stripe_product_id',
-        'stripe_price_id',
-        'billing_interval_months',
-        'starts_at',
-        'ends_at',
         'is_active',
         'first_time_free',
         'sort_order',
     ];
 
     protected $casts = [
-        'starts_at' => 'datetime',
-        'ends_at' => 'datetime',
         'is_active' => 'boolean',
         'first_time_free' => 'boolean',
-        'price_cents' => 'integer',
-        'billing_interval_months' => 'integer',
-        'latitude' => 'float',
-        'longitude' => 'float',
         'sort_order' => 'integer',
     ];
 
     public function eventType(): BelongsTo
     {
         return $this->belongsTo(EventType::class);
+    }
+
+    public function occurrences(): HasMany
+    {
+        return $this->hasMany(EventOccurrence::class)->orderBy('starts_at')->orderBy('sort_order');
     }
 
     public function registrations(): HasMany
@@ -58,40 +46,15 @@ class Event extends Model
         return $this->registrations()->where('status', 'confirmed');
     }
 
-    public function promoCodes(): HasMany
+    public function promoCodes(): HasManyThrough
     {
-        return $this->hasMany(EventPromoCode::class);
+        return $this->hasManyThrough(EventPromoCode::class, EventOccurrence::class);
     }
 
-    public function formattedPriceLabel(): string
+    public function upcomingOccurrences(): HasMany
     {
-        if ((int) $this->price_cents <= 0) {
-            return 'Free';
-        }
-
-        return Money::formatCents((int) $this->price_cents);
-    }
-
-    public function isPhysical(): bool
-    {
-        return $this->location_type === 'physical';
-    }
-
-    public function isVirtual(): bool
-    {
-        return $this->location_type === 'virtual';
-    }
-
-    public function mapUrl(): ?string
-    {
-        if ($this->latitude && $this->longitude) {
-            return 'https://www.google.com/maps?q=' . $this->latitude . ',' . $this->longitude;
-        }
-
-        if (filled($this->address)) {
-            return 'https://www.google.com/maps/search/?api=1&query=' . urlencode((string) $this->address);
-        }
-
-        return null;
+        return $this->occurrences()
+            ->where('is_active', true)
+            ->where('starts_at', '>=', now()->subDay());
     }
 }

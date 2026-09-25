@@ -15,18 +15,32 @@ class EventsTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->defaultSort('starts_at', 'desc')
+            ->defaultSort('sort_order')
+            ->modifyQueryUsing(fn ($query) => $query->with(['occurrences', 'eventType']))
             ->columns([
                 TextColumn::make('title')->searchable(),
                 TextColumn::make('eventType.name')->label('Type')->badge()->placeholder('—'),
-                TextColumn::make('starts_at')->dateTime('M j, Y g:i A')->sortable(),
-                TextColumn::make('location_type')->badge(),
-                TextColumn::make('price_cents')->label('Price')->formatStateUsing(fn ($state, $record) => $record->formattedPriceLabel()),
+                TextColumn::make('occurrences_count')
+                    ->label('Sessions')
+                    ->counts('occurrences')
+                    ->sortable(),
+                TextColumn::make('next_starts_at')
+                    ->label('Next session')
+                    ->getStateUsing(function ($record) {
+                        $next = $record->occurrences
+                            ->where('is_active', true)
+                            ->filter(fn ($o) => $o->starts_at && $o->starts_at->gte(now()->subDay()))
+                            ->sortBy('starts_at')
+                            ->first();
+
+                        return $next?->starts_at;
+                    })
+                    ->dateTime('M j, Y g:i A')
+                    ->placeholder('—'),
                 TextColumn::make('attendees_count')
                     ->label('Attendees')
                     ->counts('attendees')
                     ->sortable(),
-                IconColumn::make('stripe_price_id')->label('Stripe')->boolean()->getStateUsing(fn ($record) => filled($record->stripe_price_id)),
                 IconColumn::make('is_active')->boolean(),
             ])
             ->recordActions([
