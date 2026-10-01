@@ -58,23 +58,41 @@ class IntegrationSettingForm
                     ])
                     ->columns(1)
                     ->columnSpanFull(),
-                Section::make('Stripe Settings')
+                Section::make('Stripe')
+                    ->description('Keys from your Stripe Dashboard → Developers → API keys. Switching between test and live keys means you should re-sync programs and event dates to Stripe.')
                     ->schema([
                         TextInput::make('stripe_publishable_key')
+                            ->label('Publishable key')
+                            ->placeholder('pk_live_… or pk_test_…')
+                            ->helperText('Starts with pk_. Used by checkout on the website.')
                             ->required()
-                            ->disabled(),
+                            ->maxLength(255)
+                            ->startsWith('pk_')
+                            ->autocomplete(false)
+                            ->copyable()
+                            ->columnSpanFull(),
                         TextInput::make('stripe_secret_key')
+                            ->label('Secret key')
                             ->password()
                             ->revealable()
+                            ->placeholder('sk_live_… or sk_test_…')
+                            ->helperText('Starts with sk_. Keep this private. Used to create checkout sessions and sync products.')
                             ->required()
-                            ->disabled(),
+                            ->startsWith('sk_')
+                            ->autocomplete('new-password')
+                            ->columnSpanFull(),
                         TextInput::make('stripe_webhook_secret')
+                            ->label('Webhook signing secret')
                             ->password()
                             ->revealable()
+                            ->placeholder('whsec_…')
+                            ->helperText('Starts with whsec_. From the webhook endpoint that points at /api/stripe/webhook.')
                             ->required()
-                            ->disabled(),
+                            ->startsWith('whsec_')
+                            ->autocomplete('new-password')
+                            ->columnSpanFull(),
                     ])
-                    ->columns(2)
+                    ->columns(1)
                     ->columnSpanFull(),
             ]);
     }
