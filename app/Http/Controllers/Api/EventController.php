@@ -9,8 +9,10 @@ use App\Models\EventRegistration;
 use App\Models\EventRegistrationHistory;
 use App\Services\EventRegistrationService;
 use App\Services\StripeEventCheckoutService;
+use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class EventController extends Controller
 {
@@ -60,7 +62,12 @@ class EventController extends Controller
                 ->get();
 
             foreach ($registrations as $registration) {
-                app(StripeEventCheckoutService::class)->syncRegistrationPayment($registration);
+                try {
+                    app(StripeEventCheckoutService::class)->syncRegistrationPayment($registration);
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+
                 $registration->refresh();
             }
 
@@ -140,7 +147,7 @@ class EventController extends Controller
         if ($minPrice !== null) {
             $summaryParts[] = ((int) $minPrice <= 0)
                 ? 'Free'
-                : 'From ' . \App\Support\Money::formatCents((int) $minPrice);
+                : 'From '.Money::formatCents((int) $minPrice);
         }
 
         return [
@@ -154,7 +161,7 @@ class EventController extends Controller
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int|string, EventRegistration>  $registrationsByOccurrence
+     * @param  Collection<int|string, EventRegistration>  $registrationsByOccurrence
      * @return array<string, mixed>
      */
     private function detailPayload(Event $event, $registrationsByOccurrence): array
@@ -209,7 +216,7 @@ class EventController extends Controller
     {
         $imageUrl = $event->image_url;
         if ($imageUrl && ! str_starts_with($imageUrl, 'http') && ! str_starts_with($imageUrl, '/')) {
-            return rtrim((string) config('app.url'), '/') . '/storage/' . ltrim($imageUrl, '/');
+            return rtrim((string) config('app.url'), '/').'/storage/'.ltrim($imageUrl, '/');
         }
 
         return $imageUrl;

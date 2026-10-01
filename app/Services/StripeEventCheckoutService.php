@@ -132,9 +132,17 @@ class StripeEventCheckoutService
             return false;
         }
 
+        if (! $this->sessionMatchesStripeMode($sessionId, $secretKey)) {
+            return false;
+        }
+
         Stripe::setApiKey($secretKey);
 
-        $session = Session::retrieve($sessionId);
+        try {
+            $session = Session::retrieve($sessionId);
+        } catch (\Throwable) {
+            return false;
+        }
         $registrationId = (int) ($session->metadata->event_registration_id ?? 0);
 
         if ($registrationId !== (int) $registration->id) {
@@ -168,6 +176,24 @@ class StripeEventCheckoutService
         return true;
     }
 
+    private function sessionMatchesStripeMode(string $sessionId, string $secretKey): bool
+    {
+        $sessionIsTest = str_starts_with($sessionId, 'cs_test_');
+        $sessionIsLive = str_starts_with($sessionId, 'cs_live_');
+        $keyIsTest = str_starts_with($secretKey, 'sk_test_');
+        $keyIsLive = str_starts_with($secretKey, 'sk_live_');
+
+        if ($sessionIsTest && $keyIsLive) {
+            return false;
+        }
+
+        if ($sessionIsLive && $keyIsTest) {
+            return false;
+        }
+
+        return true;
+    }
+
     private function recordTransactionIfMissing(EventRegistration $registration): void
     {
         $sessionId = trim((string) $registration->stripe_checkout_session_id);
@@ -177,6 +203,10 @@ class StripeEventCheckoutService
 
         $secretKey = (string) $this->settings->stripe('secret_key');
         if ($secretKey === '') {
+            return;
+        }
+
+        if (! $this->sessionMatchesStripeMode($sessionId, $secretKey)) {
             return;
         }
 
