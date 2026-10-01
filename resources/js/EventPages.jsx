@@ -47,7 +47,7 @@ export function EventsPage({ Layout }) {
                                 <h3>{event.title}</h3>
                                 {event.description ? (
                                     <div
-                                        className="program-details event-card-description"
+                                        className="program-details event-card-description rich-content"
                                         dangerouslySetInnerHTML={{ __html: event.description }}
                                     />
                                 ) : null}
@@ -248,7 +248,7 @@ export function EventDetailPage({ Layout }) {
                     <img src={event.image_url} alt={event.title} className="service-card-image" style={{ marginBottom: "1rem" }} />
                 ) : null}
                 {event.description ? (
-                    <div className="program-details" dangerouslySetInnerHTML={{ __html: event.description }} />
+                    <div className="program-details rich-content" dangerouslySetInnerHTML={{ __html: event.description }} />
                 ) : null}
 
                 {message && <p className="booking-success">{message}</p>}

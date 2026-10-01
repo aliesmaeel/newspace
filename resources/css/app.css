@@ -540,25 +540,83 @@ h2 {
 .program-details {
     margin: 0 0 0.35rem;
     text-align: left;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+}
+
+.program-details > :first-child {
+    margin-top: 0;
+}
+
+.program-details > :last-child {
+    margin-bottom: 0;
 }
 
 .program-details p {
     margin: 0 0 0.55rem;
 }
 
-.program-details ul {
+.program-details p:empty:not(:last-child) {
+    margin-bottom: 0;
+}
+
+.program-details p:empty:not(:last-child)::before {
+    content: "\00a0";
+}
+
+.program-details h2,
+.program-details h3,
+.program-details h4 {
+    color: var(--text);
+    font-weight: 600;
+    line-height: 1.3;
+    margin: 1.15rem 0 0.5rem;
+}
+
+.program-details h2 {
+    font-size: 1.25rem;
+}
+
+.program-details h3 {
+    font-size: 1.1rem;
+}
+
+.program-details h4 {
+    font-size: 1rem;
+}
+
+.program-card .program-details h2,
+.program-card .program-details h3,
+.program-card .program-details h4 {
+    font-size: 1.05rem;
+    margin: 0.85rem 0 0.4rem;
+}
+
+.program-details ul,
+.program-details ol {
     margin: 0.95rem 0 1.2rem;
     padding: 0;
+}
+
+.program-details ul {
     list-style: none;
+}
+
+.program-details ol {
+    list-style: decimal;
+    padding-left: 1.35rem;
 }
 
 .program-details li {
     position: relative;
-    padding-left: 1.2rem;
     margin-bottom: 0.55rem;
 }
 
-.program-details li::before {
+.program-details ul > li {
+    padding-left: 1.2rem;
+}
+
+.program-details ul > li::before {
     content: "";
     position: absolute;
     left: 0;
@@ -570,8 +628,127 @@ h2 {
     box-shadow: 0 0 0 2px #efe3c4;
 }
 
+.program-details a {
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.program-details a:hover,
+.program-details a:focus-visible {
+    color: var(--text);
+}
+
+.program-details blockquote {
+    margin: 0.9rem 0 1.1rem;
+    padding: 0.15rem 0 0.15rem 1rem;
+    border-left: 3px solid var(--primary);
+    color: var(--text);
+    font-style: italic;
+}
+
+.program-details hr {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: 1.25rem 0;
+}
+
+.program-details img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0.75rem 0;
+    border-radius: 10px;
+}
+
+.program-details table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.9rem 0 1.15rem;
+    font-size: 0.95rem;
+}
+
+.program-details th,
+.program-details td {
+    border: 1px solid var(--line);
+    padding: 0.55rem 0.7rem;
+    text-align: left;
+    vertical-align: top;
+}
+
+.program-details th {
+    color: var(--text);
+    background: rgba(182, 153, 76, 0.12);
+    font-weight: 600;
+}
+
+.program-details mark {
+    background: rgba(182, 153, 76, 0.35);
+    color: inherit;
+    padding: 0 0.15em;
+    border-radius: 2px;
+}
+
+.program-details span.color {
+    color: var(--dark-color, var(--color));
+}
+
+.program-details small {
+    font-size: 0.85em;
+    color: var(--text-soft);
+}
+
+.program-details .lead {
+    max-width: none;
+    font-size: 1.08rem;
+    color: var(--text);
+}
+
+.program-details details {
+    margin: 0.75rem 0;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.15rem 0.85rem;
+    background: rgba(20, 19, 17, 0.35);
+}
+
+.program-details summary {
+    cursor: pointer;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    color: var(--text);
+    font-weight: 600;
+}
+
+.program-details .grid-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin: 0.85rem 0;
+}
+
+@media (min-width: 768px) {
+    .program-details .grid-layout {
+        grid-template-columns: var(--cols, 1fr);
+    }
+
+    .program-details .grid-layout-col {
+        grid-column: var(--col-span, auto);
+    }
+}
+
 .event-card-description {
     margin-bottom: 0.85rem;
+}
+
+.event-card-description img {
+    max-height: 140px;
+    object-fit: cover;
+}
+
+.event-card-description table {
+    font-size: 0.85rem;
 }
 
 .program-content > .btn {
