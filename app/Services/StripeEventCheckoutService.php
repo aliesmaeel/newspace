@@ -7,6 +7,7 @@ use App\Models\EventOccurrence;
 use App\Models\EventPromoCode;
 use App\Models\EventRegistration;
 use App\Models\Transaction;
+use App\Support\StripeCurrentMode;
 use RuntimeException;
 use Stripe\Checkout\Session;
 use Stripe\Coupon;
@@ -93,8 +94,8 @@ class StripeEventCheckoutService
             return null;
         }
 
-        $existing = trim((string) $promo->stripe_coupon_id);
-        if ($existing !== '') {
+        $existing = StripeCurrentMode::existingCouponId($promo->stripe_coupon_id);
+        if ($existing !== null) {
             return $existing;
         }
 

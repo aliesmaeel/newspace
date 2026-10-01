@@ -3,8 +3,9 @@
 namespace App\Services;
 
 use App\Models\Program;
-use RuntimeException;
+use App\Support\StripeCurrentMode;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Stripe\Price;
 use Stripe\Product;
 use Stripe\Stripe;
@@ -33,10 +34,10 @@ class StripeProgramSyncService
 
         Stripe::setApiKey($secretKey);
 
-        $productId = trim((string) ($program->stripe_product_id ?? ''));
+        $productId = StripeCurrentMode::existingProductId($program->stripe_product_id);
         $plainDescription = Str::limit(trim(strip_tags((string) $program->description)), 500, '');
 
-        if ($productId === '') {
+        if ($productId === null) {
             $product = Product::create([
                 'name' => $program->title,
                 'description' => $plainDescription !== '' ? $plainDescription : null,

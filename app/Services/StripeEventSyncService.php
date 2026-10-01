@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\EventOccurrence;
+use App\Support\StripeCurrentMode;
 use RuntimeException;
 use Stripe\Price;
 use Stripe\Product;
@@ -33,13 +34,13 @@ class StripeEventSyncService
 
         $productName = $event->title;
         if (filled($occurrence->label)) {
-            $productName .= ' — ' . $occurrence->label;
+            $productName .= ' — '.$occurrence->label;
         } elseif ($occurrence->starts_at) {
-            $productName .= ' — ' . $occurrence->starts_at->format('j M Y');
+            $productName .= ' — '.$occurrence->starts_at->format('j M Y');
         }
 
-        $productId = trim((string) ($occurrence->stripe_product_id ?? ''));
-        if ($productId === '') {
+        $productId = StripeCurrentMode::existingProductId($occurrence->stripe_product_id);
+        if ($productId === null) {
             $product = Product::create([
                 'name' => $productName,
                 'metadata' => [
